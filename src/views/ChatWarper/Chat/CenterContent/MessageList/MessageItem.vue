@@ -85,7 +85,13 @@
         !CHECK_SLOW_REPLY.isSlowReply() &&
         !CHECK_SLOW_REPLY.isSystemSlowReply()
       "
+      :group_client_name="message.group_client_name"
+      :platform_type="message.platform_type"
+      :fb_page_id="message.fb_page_id"
+      :sender_id="message.sender_id"
+      :message_type="message.message_type"
     />
+    <!-- :sender_id="message.sender_id" -->
   </div>
 </template>
 <script setup lang="ts">

@@ -206,6 +206,8 @@ export interface MessageInfo {
   snap_replay_message?: MessageInfo
   /**dữ liệu của AI */
   ai?: MessageAiData[]
+  /** sender id id người gửi*/
+  sender_id?: string
 }
 
 /**

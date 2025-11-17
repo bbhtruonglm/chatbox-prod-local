@@ -28,9 +28,15 @@
         }}
       </template>
       <template v-else>
-        {{
+        <!-- {{
           $t("Gửi tin nhắn đến _. Sử dụng '/' để trả lời nhanh.", {
             name: conversationStore.select_conversation?.client_name,
+          })
+        }} -->
+        {{
+          $t("Trả lời từ _. Sử dụng '/' để trả lời nhanh.", {
+            // name: conversationStore.select_conversation?.client_name,
+            name: page_name,
           })
         }}
       </template>
@@ -38,7 +44,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   useConversationStore,
@@ -81,6 +87,7 @@ const conversationStore = useConversationStore()
 const messageStore = useMessageStore()
 const commonStore = useCommonStore()
 const pageStore = usePageStore()
+const orgStore = useOrgStore()
 const { t: $t } = useI18n()
 const $delay = container.resolve(Delay)
 
@@ -106,6 +113,21 @@ const client_id = computed(
 const platform_type = computed(
   () => conversationStore.select_conversation?.platform_type
 )
+/** Render tên page */
+const page_name = computed(() => {
+  /** Lấy list page */
+  const LIST = orgStore.list_os || []
+  /** lấy page trùng với page hiện tại */
+  const PAGE = LIST.find(p => p.page_id === page_id.value)
+  /** Nếu k có page thì return '' */
+  if (!PAGE) return ''
+  /** Lấy tên gợi nhớ */
+  const ALIAS = PAGE.page_info?.alias
+  /** Lấy tên mặc định */
+  const NAME = PAGE.page_info?.name
+  /** Nếu có Tên gợi nhớ thì lấy tên gợi nhớ, không thì lấy tên mặc định */
+  return ALIAS && ALIAS.trim() !== '' ? ALIAS : NAME || ''
+})
 
 /**decorator xử lý khi phát sinh lỗi trả lời bình luận */
 const handleErrorReplyComment = error(

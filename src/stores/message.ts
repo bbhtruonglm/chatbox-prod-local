@@ -1,10 +1,3 @@
-import { remove } from 'lodash'
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-
-import type ZaloPersonalModal from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/PhoneAction/ZaloPersonalModal.vue'
-
-import type { UploadFile } from '@/service/interface/app/album'
 import type {
   AttachmentCacheList,
   AttachmentInfo,
@@ -12,6 +5,14 @@ import type {
   MessageInfo,
   TempSendMessage,
 } from '@/service/interface/app/message'
+
+import type { UploadFile } from '@/service/interface/app/album'
+import type ZaloAddMember from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/PhoneAction/ZaloAddMember.vue'
+import type ZaloCreateGroup from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/PhoneAction/ZaloCreateGroup.vue'
+import type ZaloPersonalModal from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/PhoneAction/ZaloPersonalModal.vue'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { remove } from 'lodash'
 
 export const useMessageStore = defineStore('message_store', () => {
   /** id của danh sách tin nhắn */
@@ -51,6 +52,11 @@ export const useMessageStore = defineStore('message_store', () => {
 
   /** Địa chỉ trỏ tới hội thoại zalo */
   const modal_zalo_personal_ref = ref<InstanceType<typeof ZaloPersonalModal>>()
+  /** Địa chỉ trỏ tới modal Tạo nhóm zalo */
+  const modal_zalo_create_group_ref =
+    ref<InstanceType<typeof ZaloCreateGroup>>()
+  /** Địa chỉ trỏ tới modal thêm thành viên vào nhóm zalo */
+  const modal_zalo_add_member_ref = ref<InstanceType<typeof ZaloAddMember>>()
 
   /** cờ check input có thể gửi tin nhắn hay không */
   const is_can_send_message = ref(true)
@@ -81,7 +87,7 @@ export const useMessageStore = defineStore('message_store', () => {
   function isAiMessage(message: MessageInfo) {
     /**tiền tố đánh dấu tin nhắn này là của AI gửi */
     const PREFIX = '\u200B\u200C\u200D\u200B'
-    
+
     return message?.message_text?.startsWith(PREFIX)
   }
 
@@ -100,10 +106,11 @@ export const useMessageStore = defineStore('message_store', () => {
     message_data,
     modal_zalo_personal_ref,
     is_can_send_message,
-
+    modal_zalo_create_group_ref,
     updateTempMessage,
     removeTempMessage,
     clearReplyComment,
-    isAiMessage
+    isAiMessage,
+    modal_zalo_add_member_ref,
   }
 })

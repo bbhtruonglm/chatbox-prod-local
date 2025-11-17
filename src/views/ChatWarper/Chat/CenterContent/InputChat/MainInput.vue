@@ -104,7 +104,7 @@ const messageStore = useMessageStore()
 const commonStore = useCommonStore()
 const conversationStore = useConversationStore()
 const { t: $t } = useI18n()
-
+/** Ref của emoji */
 const emoji_ref = ref<InstanceType<typeof Dropdown>>()
 
 /**ref của ô chat tin nhắn */

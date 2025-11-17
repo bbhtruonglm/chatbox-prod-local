@@ -128,14 +128,19 @@
   </div>
   <Menu ref="client_menu_ref" />
   <ListPhone ref="phone_list_ref" />
-  <Member ref="member_list_ref" />
+  <Member
+    ref="member_list_ref"
+    @add-member="openAddZaloModal"
+  />
   <ChangeStaff ref="change_staff_ref" />
+  <ZaloAddMember ref="modal_zalo_add_member_ref" />
 </template>
 <script setup lang="ts">
 import {
   useCommonStore,
   useConversationStore,
   useExtensionStore,
+  useMessageStore,
   useOrgStore,
 } from '@/stores'
 import { N4SerivceAppOneConversation } from '@/utils/api/N4Service/Conversation'
@@ -163,6 +168,8 @@ import { error } from '@/utils/decorator/Error'
 import { loading } from '@/utils/decorator/Loading'
 import { UsersIcon } from '@heroicons/vue/24/outline'
 import { PhoneIcon } from '@heroicons/vue/24/solid'
+import ZaloAddMember from './MessageList/MessageItem/PhoneAction/ZaloAddMember.vue'
+import { storeToRefs } from 'pinia'
 
 const $emit = defineEmits(['toggle_change_assign_staff'])
 
@@ -185,6 +192,15 @@ const change_staff_ref = ref<InstanceType<typeof ChangeStaff>>()
 const is_loading_unread_conversation = ref(false)
 /** trạng thái của tài khoản hiện tại có phải là admin hay ko? */
 const is_admin = computed(() => conversationStore.isCurrentStaffAdmin())
+
+const { modal_zalo_add_member_ref } = storeToRefs(useMessageStore())
+
+const openAddZaloModal = () => {
+  console.log('modal add member to group')
+  // mở modal Add Zalo
+  // isAddZaloModalOpen.value = true
+  modal_zalo_add_member_ref?.value?.toggleModal()
+}
 
 /** lắng nghe trạng thái của phím tắt */
 watch(

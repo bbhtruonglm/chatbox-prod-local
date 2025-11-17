@@ -85,6 +85,8 @@ const source: Language = {
   'Cài đặt Extension': 'Install Extension',
   "Gửi tin nhắn đến _. Sử dụng '/' để trả lời nhanh.":
     'Send a message to {name}. Use "/" to reply quickly.',
+  "Trả lời từ _. Sử dụng '/' để trả lời nhanh.":
+    'Send a from {name}. Use "/" to reply quickly.',
   'Hiện chấm màu có chú giải': 'Show color dot with tooltip',
   'Chỉ hiện chấm màu': 'Show color dot only',
   'Hiện văn bản': 'Show text',
@@ -329,6 +331,23 @@ const source: Language = {
       select_all: 'Select all',
       active: 'Activate',
       chatbox: 'Chatbox',
+      add_customer: 'Add Customer',
+      create_new_group: 'Create New Group',
+      search_member: 'Search for Member',
+
+      create_group: 'Create Group',
+      your_group_name: 'Your Group Name',
+      create_zalo_group: 'Create Zalo Group',
+      member_selected: 'Member Selected',
+      confirm_remove_member:
+        'Are you sure you want to remove this member from the group?',
+
+      no_data: 'No members',
+      list_member: 'List members',
+      add_member: 'Add member',
+      reset_select: 'Reset change',
+      remove_member: 'Remove member',
+
       unsupport_message:
         'This message content cannot be displayed currently, please contact the system administrator.',
       close: 'Close',

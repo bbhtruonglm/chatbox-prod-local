@@ -7,8 +7,19 @@
     position="BOTTOM"
     :back="210"
     :distance="9"
-    class_content="flex flex-col  gap-1 max-h-[210px] overflow-hidden overflow-y-auto"
+    class_content="flex flex-col  gap-1 max-h-[210px] "
   >
+    <div class="flex justify-between gap-2 p-2 text-right items-center">
+      <div class="size-5"></div>
+      <span>{{ $t('v1.common.list_member') }}</span>
+      <div
+        class="bg-slate-100 p-1 rounded-full cursor-pointer"
+        v-tooltip="$t('Thêm thành viên')"
+        @click="emit('add-member')"
+      >
+        <UserPlusIcon class="size-4" />
+      </div>
+    </div>
     <div
       v-if="is_loading"
       class="relative z-10"
@@ -17,21 +28,23 @@
         <Loading class="mx-auto" />
       </div>
     </div>
+    <div class="overflow-hidden overflow-y-auto">
+      <!-- Lặp qua member_lists và hiển thị từng memberItem -->
+      <MemberItem
+        v-for="(item, index) in member_lists"
+        :key="index"
+        :avatar_member="item.client_avatar"
+        :name_member="item.client_name"
+        :member_id="item.client_id"
+      />
 
-    <!-- Lặp qua member_lists và hiển thị từng memberItem -->
-    <MemberItem
-      v-for="(item, index) in member_lists"
-      :key="index"
-      :avatar_member="item.client_avatar"
-      :name_member="item.client_name"
-    />
-
-    <!-- Nếu không có thành viên nào thì hiển thị thông báo -->
-    <div
-      v-if="member_lists.length === 0"
-      class="text-gray-500 text-center py-8"
-    >
-      <p v-if="!is_loading">{{ $t('Chưa có thành viên nào') }}</p>
+      <!-- Nếu không có thành viên nào thì hiển thị thông báo -->
+      <div
+        v-if="member_lists.length === 0"
+        class="text-gray-500 text-center py-8"
+      >
+        <p v-if="!is_loading">{{ $t('Chưa có thành viên nào') }}</p>
+      </div>
     </div>
   </Dropdown>
 </template>
@@ -44,6 +57,8 @@ import { ref } from 'vue'
 /**component*/
 import Dropdown from '@/components/Dropdown.vue'
 import Loading from '@/components/Loading.vue'
+
+import { UserPlusIcon } from '@heroicons/vue/24/outline'
 
 /**component con*/
 import MemberItem from '@/views/ChatWarper/Chat/CenterContent/UserInfo/Member/MemberItem.vue'
@@ -58,6 +73,11 @@ const conversationStore = useConversationStore()
 
 /**trạng thái loading */
 const is_loading = ref(false)
+
+/** Thêm emits cho component */
+const emit = defineEmits<{
+  (e: 'add-member'): void
+}>()
 
 const $toast = container.resolve(Toast)
 
@@ -75,8 +95,8 @@ class Main {
    */
   constructor(
     private readonly API = container.resolve(N4SerivceAppZaloPersonal)
-  )  {
-    this.toggle = this.toggle.bind(this) 
+  ) {
+    this.toggle = this.toggle.bind(this)
   }
 
   /** Ẩn/hiện dropdown danh sách thành viên của nhóm */
@@ -118,7 +138,6 @@ class Main {
       if (RES) {
         // Nếu có, gán dữ liệu vào biến member_lists
         member_lists.value = RES
-      
       } else {
         // Nếu không có, hiển thị thông báo
         $toast.error($t('Không có dữ liệu'))

@@ -2,12 +2,14 @@
   <div
     v-if="client_id"
     id="chat__input-chat"
-    class="w-full relative flex-shrink-0 flex flex-col gap-2"
+    class="w-full relative flex-shrink-0 flex flex-col"
   >
     <ScrollToBottomBtn />
     <!-- Trả lời bình luận bài viết fb -->
     <ReplyComment v-if="messageStore.reply_comment?.root_comment_id" />
-    <ListLabel v-else />
+    <ListLabel
+      v-if="conversationStore.select_conversation?.conversation_type !== 'POST'"
+    />
     <PreviewAttachment />
     <MainInput
       v-if="conversationStore.select_conversation?.conversation_type !== 'POST'"
@@ -24,12 +26,16 @@ import MainInput from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput
 import ReplyComment from '@/views/ChatWarper/Chat/CenterContent/InputChat/ReplyComment.vue'
 
 const $props = defineProps({
-  client_id:{
+  /** Client id */
+  client_id: {
+    /** type string */
     type: String,
+    /** giá trị mặc định */
     default: '',
-  }
+  },
 })
-
+/** Khai báo tin nhắn từ store */
 const messageStore = useMessageStore()
+/** Khai báo list conversation từ store */
 const conversationStore = useConversationStore()
 </script>

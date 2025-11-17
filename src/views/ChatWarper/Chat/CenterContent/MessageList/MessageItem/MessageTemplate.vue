@@ -62,8 +62,8 @@
       />
       <p
         v-if="
-          (!is_view_full && (ref_message_content?.clientHeight) ||
-          0) >= MAX_HEIGHT_CONTENT
+          ((!is_view_full && ref_message_content?.clientHeight) || 0) >=
+          MAX_HEIGHT_CONTENT
         "
         @click="is_view_full = true"
       >

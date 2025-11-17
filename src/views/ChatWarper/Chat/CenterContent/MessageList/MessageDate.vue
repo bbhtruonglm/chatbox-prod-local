@@ -2,6 +2,7 @@
   <div
     id="chat__message-date"
     class="text-xxs text-slate-500 absolute group-hover:block hidden w-max z-10 -bottom-3.5"
+    :class="sender_id === fb_page_id ? 'right-0' : 'left-0'"
   >
     <span
       v-if="parserStaffName()"
@@ -26,12 +27,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { DateHandle } from '@/utils/helper/DateHandle';
-import { container } from 'tsyringe';
-import { useI18n } from 'vue-i18n';
+import { DateHandle } from '@/utils/helper/DateHandle'
+import { container } from 'tsyringe'
+import { useI18n } from 'vue-i18n'
 
 /** i18n */
-const { t } = useI18n();
+const { t } = useI18n()
 
 const $props = withDefaults(
   defineProps<{
@@ -49,6 +50,16 @@ const $props = withDefaults(
     is_show_duration?: boolean
     /** có phải tin nhắn của AI gửi hay không */
     is_ai?: boolean
+    /** platform type : loại platform */
+    platform_type?: string
+    /** sender id : id người gửi */
+    sender_id?: string
+    /** Tên người gửi nếu có */
+    group_client_name?: string
+    /** page_id trong tin nhắn */
+    fb_page_id?: string
+    /** message_type */
+    message_type?: string
   }>(),
   {}
 )
@@ -57,15 +68,23 @@ const $date_handle = container.resolve(DateHandle)
 
 /**phân tích tên nv từ meta */
 function parserStaffName() {
-  // nếu là AI gửi
+  /** nếu là AI gửi */
   if ($props.is_ai) return t('Trợ lý AI')
+  /** Trường hợp website là tin nhắn khởi tạo */
+  // if (!$props.meta && $props.message_type !== 'client')
+  //   return t('Tin nhắn khởi tạo')
+  // /** Trường hợp chatbot, kịch bản */
+  // if ($props.meta === '__undefined__undefined') return t('Chatbot')
 
   /** tên nhân sự nhắn tin */
-  const STAFF_NAME = $props.meta?.split('__')?.[1]
+  const STAFF_NAME = $props.meta?.split('__')?.[1] || $props?.group_client_name
 
-  // nếu không có thì là AI nhắn
-  if(STAFF_NAME === 'undefined') return ''
+  // console.log($props.group_client_name, 'hehe')
+  // console.log($props.meta, 'metaa')
 
-  return $props.meta?.split('__')?.[1]
+  /** nếu không có thì là AI nhắn */
+  if (STAFF_NAME === 'undefined') return ''
+  /** Trả ra tên của người gửi */
+  return $props.meta?.split('__')?.[1] || $props.group_client_name
 }
 </script>

@@ -57,6 +57,23 @@
       </div>
       <div class="flex gap-3 text-slate-500">
         <button
+          v-show="
+            conversationStore.select_conversation?.platform_type?.includes(
+              'ZALO'
+            )
+          "
+          class="p-2 bg-slate-100 rounded-full"
+          @click="
+            () => {
+              modal_zalo_create_group_ref?.toggleModal()
+              message_data = undefined
+            }
+          "
+          v-tooltip="$t('v1.common.create_new_group')"
+        >
+          <UserGroupIcon class="size-4 flex-shrink-0" />
+        </button>
+        <button
           class="p-2 bg-slate-100 rounded-full"
           @click="
             () => {
@@ -64,13 +81,14 @@
               message_data = undefined
             }
           "
-          v-tooltip.bottom="$t('Thêm khách hàng')"
+          v-tooltip="$t('v1.common.add_customer')"
         >
           <UserPlusIcon class="size-4 flex-shrink-0" />
         </button>
         <button
           @click="$main.toggleSearch()"
           class="w-8 h-8 bg-slate-100 rounded-full flex justify-center items-center"
+          v-tooltip="$t('v1.common.search')"
         >
           <SearchIcon class="w-4 h-4" />
         </button>
@@ -136,7 +154,12 @@ import { useRouter } from 'vue-router'
 import QuickFilter from '@/views/ChatWarper/Chat/LeftBar/Header/QuickFilter.vue'
 
 import SearchIcon from '@/components/Icons/Search.vue'
-import { FunnelIcon, UserPlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import {
+  FunnelIcon,
+  UserGroupIcon,
+  UserPlusIcon,
+  XMarkIcon,
+} from '@heroicons/vue/24/outline'
 import { XCircleIcon } from '@heroicons/vue/24/solid'
 
 import type { ILabel } from '@/service/interface/app/label'
@@ -152,7 +175,8 @@ const pageStore = usePageStore()
 const orgStore = useOrgStore()
 const { t: $t } = useI18n()
 
-const { modal_zalo_personal_ref, message_data } = storeToRefs(useMessageStore())
+const { modal_zalo_personal_ref, message_data, modal_zalo_create_group_ref } =
+  storeToRefs(useMessageStore())
 
 /** router */
 const $router = useRouter()

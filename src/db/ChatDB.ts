@@ -44,12 +44,12 @@ class ChatDB extends Dexie {
 
   /**
    * 💾 Lưu nhiều conversation vào DB bằng bulkPut
-   * - mapConvs: object { id: ConversationInfo }
+   * - map_convs: object { id: ConversationInfo }
    * - Tự tạo last_update & đảm bảo id hợp lệ
    */
-  async saveMany(mapConvs: Record<string, ConversationInfo>) {
+  async saveMany(map_convs: Record<string, ConversationInfo>) {
     /** Chuyển map → array + chuẩn hoá lại id + thêm last_update */
-    const LIST = map(mapConvs, c => {
+    const LIST = map(map_convs, c => {
       const ID = `${c.fb_page_id}_${c.fb_client_id}`
       return { ...c, id: ID, last_update: Date.now() }
     })

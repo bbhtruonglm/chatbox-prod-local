@@ -42,16 +42,16 @@ export class ChatAdapter {
     let start_index = 0
     /** Nếu có giá trị after */
     if (after?.length) {
-      /** Lấy list sau after */
-      const IDX = list.findIndex(c => after.includes(c.last_message_time || 0))
-      /** Nếu IDX > 0, tăng giá trị index */
+      const lastAfter = after[after.length - 1] // chỉ lấy phần tử cuối
+      const IDX = list.findIndex(c => (c.last_message_time || 0) === lastAfter)
       if (IDX >= 0) start_index = IDX + 1
     }
+
     /** Căt list từ index -> tới index + limit */
     const SLICE = list.slice(start_index, start_index + limit)
     /** Trả lại giá trị after để call lại lần sau - hoặc là undefined */
     const NEXT_AFTER = SLICE.length
-      ? SLICE.map(c => c.last_message_time || 0) // ✅ number[] tương thích
+      ? [SLICE[SLICE.length - 1].last_message_time || 0]
       : undefined
 
     /** Trả về conversation và after */

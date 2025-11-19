@@ -407,50 +407,143 @@ class Main {
    * đếm số lượng hội thoại
    */
   @error()
+  // async countConversation(conversation_type: 'CHAT' | 'POST') {
+  //   /** nếu đang mất mạng thì không cho gọi api */
+  //   if (!commonStore.is_connected_internet) return
+
+  //   /**danh sách id page */
+  //   const PAGE_IDS = keys(pageStore.selected_page_id_list)
+  //   /**cấu hình trang đặc biệt */
+  //   const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
+
+  //   /**ghi đè 1 số lọc tin nhắn */
+  //   const OVERWRITE_FILTER: FilterConversation = {}
+
+  //   /** chỉ cho hiện hội thoại của nhân viên */
+  //   if (SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff) {
+  //     /** tạo ra filter nhân viên */
+  //     OVERWRITE_FILTER.staff_id = []
+
+  //     /** thêm id mới */
+  //     if (chatbotUserStore.chatbot_user?.user_id)
+  //       OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user?.user_id)
+
+  //     /** thêm id cũ, tránh lỗi */
+  //     if (chatbotUserStore.chatbot_user?.fb_staff_id)
+  //       OVERWRITE_FILTER.staff_id?.push(
+  //         chatbotUserStore.chatbot_user?.fb_staff_id
+  //       )
+  //   }
+
+  //   /**lấy dữ liệu hội thoại */
+  //   const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+  //     ...conversationStore.option_filter_page_data,
+  //     ...OVERWRITE_FILTER,
+  //     conversation_type,
+  //   })
+
+  //   /** nếu là đếm số bài viết */
+  //   if (conversation_type === 'POST') {
+  //     conversationStore.count_conversation.post = RES || 0
+  //   }
+
+  //   /** nếu là đếm số hội thoại chat */
+  //   if (conversation_type === 'CHAT') {
+  //     conversationStore.count_conversation.chat = RES || 0
+  //   }
+  // }
   async countConversation(conversation_type: 'CHAT' | 'POST') {
-    /** nếu đang mất mạng thì không cho gọi api */
+    /** Nếu mất mạng → bỏ */
     if (!commonStore.is_connected_internet) return
 
-    /**danh sách id page */
+    const USE_LOCAL = ChatAdapter.use_local
+
+    /** Danh sách page */
     const PAGE_IDS = keys(pageStore.selected_page_id_list)
-    /**cấu hình trang đặc biệt */
+
+    /** Cấu hình trang đặc biệt */
     const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
 
-    /**ghi đè 1 số lọc tin nhắn */
+    /** Filter ghi đè */
     const OVERWRITE_FILTER: FilterConversation = {}
-
-    /** chỉ cho hiện hội thoại của nhân viên */
     if (SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff) {
-      /** tạo ra filter nhân viên */
       OVERWRITE_FILTER.staff_id = []
 
-      /** thêm id mới */
       if (chatbotUserStore.chatbot_user?.user_id)
-        OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user?.user_id)
+        OVERWRITE_FILTER.staff_id.push(chatbotUserStore.chatbot_user.user_id)
 
-      /** thêm id cũ, tránh lỗi */
       if (chatbotUserStore.chatbot_user?.fb_staff_id)
-        OVERWRITE_FILTER.staff_id?.push(
-          chatbotUserStore.chatbot_user?.fb_staff_id
+        OVERWRITE_FILTER.staff_id.push(
+          chatbotUserStore.chatbot_user.fb_staff_id
         )
     }
 
-    /**lấy dữ liệu hội thoại */
-    const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
-      ...conversationStore.option_filter_page_data,
-      ...OVERWRITE_FILTER,
-      conversation_type,
-    })
+    /**
+     * ------------------------------------------------------------------------------------
+     *  ❌ MODE API DIRECT → không dùng IndexedDB
+     * ------------------------------------------------------------------------------------
+     */
+    if (!USE_LOCAL) {
+      const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+        conversation_type,
+      })
 
-    /** nếu là đếm số bài viết */
-    if (conversation_type === 'POST') {
-      conversationStore.count_conversation.post = RES || 0
+      if (conversation_type === 'POST')
+        conversationStore.count_conversation.post = RES || 0
+
+      if (conversation_type === 'CHAT')
+        conversationStore.count_conversation.chat = RES || 0
+
+      return
     }
 
-    /** nếu là đếm số hội thoại chat */
-    if (conversation_type === 'CHAT') {
-      conversationStore.count_conversation.chat = RES || 0
+    /**
+     * ------------------------------------------------------------------------------------
+     *  ✅ MODE LOCAL (IndexedDB)
+     * ------------------------------------------------------------------------------------
+     * Nếu need_fetch_from_api → gọi API trước rồi mới đếm từ local
+     */
+    if (USE_LOCAL && need_fetch_from_api.value) {
+      const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+        conversation_type,
+      })
+
+      // lưu lại vào store
+      if (conversation_type === 'POST')
+        conversationStore.count_conversation.post = RES || 0
+      if (conversation_type === 'CHAT')
+        conversationStore.count_conversation.chat = RES || 0
+
+      // reset flag
+      need_fetch_from_api.value = false
+
+      return
     }
+
+    /**
+     * ------------------------------------------------------------------------------------
+     *  🔥 MODE LOCAL FULL — KHÔNG FETCH API
+     *  → Đếm trực tiếp từ IndexedDB
+     * ------------------------------------------------------------------------------------
+     */
+    const COUNT = await db.countByPageIds(
+      PAGE_IDS,
+      {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+      },
+      conversation_type
+    )
+
+    if (conversation_type === 'POST')
+      conversationStore.count_conversation.post = COUNT
+
+    if (conversation_type === 'CHAT')
+      conversationStore.count_conversation.chat = COUNT
   }
 
   /**xử lý socket conversation */

@@ -381,6 +381,149 @@ class ChatDB extends Dexie {
 
     return { conversations: SLICE, after: NEXT_AFTER }
   }
+
+  /**
+   * Đếm số conversation thỏa điều kiện cho một nhóm pageIds
+   */
+  async countByPageIds(
+    pageIds: string[],
+    filter: any,
+    conversation_type?: 'CHAT' | 'POST'
+  ): Promise<number> {
+    // Lấy collection ban đầu
+    let collection = this.conversations.toCollection()
+
+    // Giới hạn theo pageIds nếu có
+    if (pageIds?.length) {
+      collection = collection.filter(c => pageIds.includes(c.fb_page_id))
+    }
+
+    // Lọc theo conversation_type nếu có
+    if (conversation_type) {
+      collection = collection.filter(
+        c => c.conversation_type === conversation_type
+      )
+    }
+
+    // Các filter giống logic filter() của bạn
+    if (filter.unread_message === 'true')
+      collection = collection.filter(c => (c.unread_message_amount || 0) > 0)
+
+    if (filter.not_response_client === 'true')
+      collection = collection.filter(
+        c => (c.last_message_type || '').toLowerCase() === 'client'
+      )
+
+    if (filter.not_exist_label === 'true')
+      collection = collection.filter(c => !c.label_id?.length)
+
+    if (filter.have_phone === 'YES')
+      collection = collection.filter(c => !!c.client_phone)
+    if (filter.have_phone === 'NO')
+      collection = collection.filter(c => !c.client_phone)
+
+    if (filter.is_spam_fb === 'YES')
+      collection = collection.filter(c => c.is_spam_fb === true)
+    if (filter.is_spam_fb === 'NO')
+      collection = collection.filter(c => c.is_spam_fb !== true)
+
+    if (filter.have_client_name)
+      collection = collection.filter(c => !!c.client_name)
+
+    if (filter.display_style) {
+      switch (filter.display_style) {
+        case 'INBOX':
+          collection = collection.filter((c: any) => c.is_have_fb_inbox)
+          break
+        case 'COMMENT':
+          collection = collection.filter((c: any) => c.is_have_fb_post)
+          break
+        case 'GROUP':
+          collection = collection.filter((c: any) => c.is_group)
+          break
+        case 'FRIEND':
+          collection = collection.filter((c: any) => !c.is_group)
+          break
+      }
+    }
+
+    if (filter.have_email === 'YES')
+      collection = collection.filter(c => !!c.client_email)
+    if (filter.have_email === 'NO')
+      collection = collection.filter(c => !c.client_email)
+
+    if (filter.platform_type)
+      collection = collection.filter(
+        c => c.platform_type === filter.platform_type
+      )
+
+    // if (filter.post_id)
+    //   collection = collection.filter(c =>
+    //     c.list_fb_post_id?.includes(filter.post_id)
+    //   )
+
+    if (filter.post_id)
+      collection = collection.filter((c: any) =>
+        c.list_fb_post_id?.includes(filter.post_id)
+      )
+
+    if (filter.staff_id?.length) {
+      collection = collection.filter(
+        c =>
+          filter.staff_id.includes(c.fb_staff_id!) ||
+          filter.staff_id.includes(c.user_id!)
+      )
+    }
+
+    if (filter.time_range?.gte || filter.time_range?.lte) {
+      const { gte, lte } = filter.time_range
+      collection = collection.filter(c => {
+        const t = c.last_message_time || 0
+        if (gte && t < gte) return false
+        if (lte && t > lte) return false
+        return true
+      })
+    }
+
+    if (filter.label_id?.length) {
+      if (filter.label_and)
+        collection = collection.filter(c =>
+          (c.label_id ?? []).every((id: string) => filter.label_id.includes(id))
+        )
+      else
+        collection = collection.filter(c =>
+          (c.label_id ?? []).some((id: string) => filter.label_id.includes(id))
+        )
+    }
+
+    if (filter.not_label_id?.length)
+      collection = collection.filter(
+        c =>
+          !(c.label_id ?? []).some((id: string) =>
+            filter.not_label_id.includes(id)
+          )
+      )
+
+    if (filter.search) {
+      const search = (filter.search as string).toLowerCase()
+      collection = collection.filter(c =>
+        [
+          c.client_name,
+          c.client_alias_name,
+          c.client_phone,
+          c.client_email,
+          c.last_message,
+          c.fb_client_id,
+        ]
+          .filter(Boolean)
+          .some(v => (v as string).toLowerCase().includes(search))
+      )
+    }
+
+    // cuối cùng count
+    const arr = await collection.toArray()
+    return arr.length
+  }
 }
 
 export const db = new ChatDB()

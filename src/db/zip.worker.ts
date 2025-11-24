@@ -1,31 +1,67 @@
-import { db } from './ChatDB'
-// zip.worker.ts
-import { unzip } from 'fflate' // dùng unzip async
+import { db } from '../db/ChatDB'
+import { unzip } from 'fflate'
 
-onmessage = async e => {
-  const url = e.data
+interface WorkerMessage {
+  type: 'load_zips'
+  urls: string[]
+}
 
-  try {
-    const res = await fetch(url)
-    const uint8 = new Uint8Array(await res.arrayBuffer())
+interface ProgressMessage {
+  type: 'progress'
+  orgId: string
+  status: 'loading' | 'done' | 'error'
+  count?: number
+  error?: string
+}
 
-    // unzip async → không block worker thread
-    unzip(uint8, async (err, files) => {
-      if (err) return postMessage({ ok: false, error: err.toString() })
+onmessage = async (e: MessageEvent<WorkerMessage>) => {
+  if (e.data.type === 'load_zips') {
+    const urls = e.data.urls
 
-      const fileName = Object.keys(files).find(f => f.endsWith('.jsonb'))
-      if (!fileName) return postMessage({ ok: false, error: 'No .jsonb file' })
+    for (const url of urls) {
+      // trích orgId từ URL (giả sử có org_id=XXX)
+      const match = url.match(/org_id-([a-z0-9]+)/i)
+      const orgId = match ? match[1] : 'unknown'
 
-      const text = new TextDecoder().decode(files[fileName])
-      const lines = text.split('\n').filter(Boolean)
-      const list = lines.map(line => JSON.parse(line))
+      postMessage({
+        type: 'progress',
+        orgId,
+        status: 'loading',
+      } as ProgressMessage)
 
-      // Lưu vào Dexie trong worker (Dexie hỗ trợ worker)
-      await db.saveMany(list)
+      try {
+        const res = await fetch(url)
+        const uint8 = new Uint8Array(await res.arrayBuffer())
 
-      postMessage({ ok: true, count: list.length })
-    })
-  } catch (err) {
-    postMessage({ ok: false, error: err.toString() })
+        await new Promise<void>((resolve, reject) => {
+          unzip(uint8, async (err, files) => {
+            if (err) return reject(err)
+
+            const fileName = Object.keys(files).find(f => f.endsWith('.jsonb'))
+            if (!fileName) return reject(new Error('No .jsonb file'))
+
+            const text = new TextDecoder().decode(files[fileName])
+            const lines = text.split('\n').filter(Boolean)
+            const list = lines.map(line => JSON.parse(line))
+
+            await db.saveMany(list)
+            postMessage({
+              type: 'progress',
+              orgId,
+              status: 'done',
+              count: list.length,
+            } as ProgressMessage)
+            resolve()
+          })
+        })
+      } catch (err: any) {
+        postMessage({
+          type: 'progress',
+          orgId,
+          status: 'error',
+          error: err.message,
+        } as ProgressMessage)
+      }
+    }
   }
 }

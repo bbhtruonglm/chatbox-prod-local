@@ -101,35 +101,35 @@ const orgStore = useOrgStore()
 
 const { ref_alert_reach_limit } = storeToRefs(commonStore)
 
-watch(
-  () => orgStore.selected_org_id,
-  async (newOrgId, oldOrgId) => {
-    if (newOrgId && newOrgId !== oldOrgId) {
-      await preloadBackup(newOrgId)
-    }
-  },
-  { immediate: true }
-)
+// watch(
+//   () => orgStore.selected_org_id,
+//   async (newOrgId, oldOrgId) => {
+//     if (newOrgId && newOrgId !== oldOrgId) {
+//       await preloadBackup(newOrgId)
+//     }
+//   },
+//   { immediate: true }
+// )
 
-async function preloadBackup(orgId: string) {
-  if (!orgId) return
-  try {
-    const backupApi = new BackupApp('app') // gọi tới module backup
-    // Lấy thông tin backup cho orgId
-    const res = await backupApi.post(`backup/get_backup_info?org_id=${orgId}`)
-    console.log(res, 'ressss')
+// async function preloadBackup(orgId: string) {
+//   if (!orgId) return
+//   try {
+//     const backupApi = new BackupApp('app') // gọi tới module backup
+//     // Lấy thông tin backup cho orgId
+//     const res = await backupApi.post(`backup/get_backup_info?org_id=${orgId}`)
+//     console.log(res, 'ressss')
 
-    const zipUrl = res?.path_conversation
-    if (zipUrl) {
-      await loadZip(zipUrl) // load zip vào IndexedDB
-      console.log('✅ Backup loaded for org:', orgId)
-    } else {
-      console.log('⚠️ No backup available for org:', orgId)
-    }
-  } catch (error) {
-    console.error('Failed to preload backup for org', orgId, error)
-  }
-}
+//     const zipUrl = res?.path_conversation
+//     if (zipUrl) {
+//       await loadZip(zipUrl) // load zip vào IndexedDB
+//       console.log('✅ Backup loaded for org:', orgId)
+//     } else {
+//       console.log('⚠️ No backup available for org:', orgId)
+//     }
+//   } catch (error) {
+//     console.error('Failed to preload backup for org', orgId, error)
+//   }
+// }
 
 // utils
 const { t: $t } = useI18n()

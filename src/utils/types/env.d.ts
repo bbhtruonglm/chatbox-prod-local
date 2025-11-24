@@ -7,12 +7,12 @@ declare global {
     local_storage: {
       /**prefix cho tên của local */
       prefix: string
-    },
+    }
     /**cài đặt cho session */
     session_storage: {
       /**prefix cho tên của session */
-      prefix: 'chatbox_',
-    },
+      prefix: 'chatbox_'
+    }
     /**danh sách các domain của api */
     host: {
       n3_socket: string
@@ -46,6 +46,8 @@ declare global {
         /**liên hệ */
         contact: string
       }
+      /**hệ thống backup */
+      backup: string
     }
     external_link: IExternalLink
     /**cài đặt cho riêng facebook */

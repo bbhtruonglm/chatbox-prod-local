@@ -1,16 +1,12 @@
 import { find, keyBy, max, size, values } from 'lodash'
 import { strFromU8, unzipSync } from 'fflate'
 
-import type { ConversationInfo } from '@/service/interface/app/conversation'
 import { db } from './ChatDB'
 
 export async function loadZip(url: string) {
   try {
-    // ✅ Use the API host from env instead of raw URL
-    const apiUrl = `${$env.host.backup}/backup/${url}`
-
-    const res = await fetch(apiUrl)
-    if (!res.ok) throw new Error(`Failed to fetch backup zip from ${apiUrl}`)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Failed to fetch ${url}`)
 
     const arrayBuffer = await res.arrayBuffer()
     const uint8 = new Uint8Array(arrayBuffer)
@@ -21,20 +17,22 @@ export async function loadZip(url: string) {
 
     const text = strFromU8(files[fileName])
     const lines = text.split('\n').filter(Boolean)
-    const list: ConversationInfo[] = lines.map(line => JSON.parse(line))
+    const list = lines.map(line => JSON.parse(line))
 
-    // --- Group theo page ---
-    const pageGroups: Record<string, ConversationInfo[]> = {}
+    // group theo pageId để tính last_update riêng
+    const pageGroups: Record<string, typeof list> = {}
     for (const conv of list) {
       if (!conv.fb_page_id || !conv.fb_client_id) continue
       if (!pageGroups[conv.fb_page_id]) pageGroups[conv.fb_page_id] = []
       pageGroups[conv.fb_page_id].push(conv)
     }
 
-    const updatedRecords: Record<string, ConversationInfo> = {}
+    const updatedRecords: Record<string, any> = {}
 
     for (const pageId in pageGroups) {
       const pageConvs = pageGroups[pageId]
+
+      // IDs duy nhất cho page này
       const ids = pageConvs.map(c => `${c.fb_page_id}_${c.fb_client_id}`)
       const existingList = await db.conversations.bulkGet(ids)
       const existingMap = keyBy(existingList, 'id')
@@ -42,13 +40,17 @@ export async function loadZip(url: string) {
       for (const conv of pageConvs) {
         const id = `${conv.fb_page_id}_${conv.fb_client_id}`
         const existing = existingMap[id]
+
         const convTime = conv.last_message_time || conv.createdAt || 0
         const existingTime =
           existing?.last_message_time || existing?.createdAt || 0
-        if (!existing || convTime > existingTime)
+
+        if (!existing || convTime > existingTime) {
           updatedRecords[id] = { ...conv, id }
+        }
       }
 
+      // tính last_update riêng theo page
       if (size(updatedRecords)) {
         const maxTime =
           max(pageConvs.map(c => c.last_message_time || c.createdAt || 0)) ||
@@ -62,7 +64,7 @@ export async function loadZip(url: string) {
 
     return list
   } catch (e) {
-    console.error('Failed to load backup zip:', e)
+    console.error('Failed to load zip:', e)
     return []
   }
 }

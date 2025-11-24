@@ -22,11 +22,13 @@ const ENV: IEnv = {
     n8_merge_v2: import.meta.env.VITE_HOST_N8_MERGE_V2,
     media_cdn: import.meta.env.VITE_HOST_MEDIA_CDN,
     n13_zalo_personal: import.meta.env.VITE_HOST_N13_ZALO_PERSONAL,
-    n13_zalo_personal_socket: import.meta.env.VITE_HOST_N13_ZALO_PERSONAL_SOCKET,
+    n13_zalo_personal_socket: import.meta.env
+      .VITE_HOST_N13_ZALO_PERSONAL_SOCKET,
     agent_config: import.meta.env.VITE_HOST_AGENT_CONFIG,
     merchant: {
       contact: import.meta.env.VITE_HOST_MERCHANT_CONTACT,
     },
+    backup: import.meta.env.VITE_HOST_BACKUP,
   },
   external_link: {
     setting: import.meta.env.VITE_EXTERNAL_SETTING,
@@ -41,9 +43,11 @@ const ENV: IEnv = {
     app_id: import.meta.env.VITE_FACEBOOK_APP_ID,
     permissions: import.meta.env.VITE_FACEBOOK_PERMISSIONS?.split(','),
     login_option: {
-      return_scopes: import.meta.env.VITE_FACEBOOK_LOGIN_RETURN_SCOPES === 'true',
+      return_scopes:
+        import.meta.env.VITE_FACEBOOK_LOGIN_RETURN_SCOPES === 'true',
       auth_type: import.meta.env.VITE_FACEBOOK_LOGIN_AUTH_TYPE,
-      enable_profile_selector: import.meta.env.VITE_FACEBOOK_LOGIN_ENABLE_PROFILE_SELECTOR === 'true',
+      enable_profile_selector:
+        import.meta.env.VITE_FACEBOOK_LOGIN_ENABLE_PROFILE_SELECTOR === 'true',
     },
   },
   zalo_oa: {

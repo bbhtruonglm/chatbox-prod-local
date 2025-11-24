@@ -107,7 +107,7 @@ const after = ref<number[]>()
 /**thời gian component được render */
 const mounted_time = ref<Date>(new Date())
 
-const need_fetch_from_api = ref(true)
+const need_fetch_from_api = ref(false)
 onMounted(() => {
   // Khi vào màn, luôn bật flag cần fetch API
   need_fetch_from_api.value = true

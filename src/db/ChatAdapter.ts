@@ -7,9 +7,14 @@ import { keyBy, orderBy } from 'lodash'
 import { db } from './ChatDB'
 
 export class ChatAdapter {
-  /** Trạng thái dùng biến local */
+  /** Trạng thái dùng local */
   static use_local = true
 
+  /**
+   * Lấy danh sách hội thoại (có phân trang + sort + after)
+   * KHÔNG thay đổi field nào
+   * KHÔNG thay đổi logic filter cũ
+   */
   static async fetchConversations(
     pageIds: string[],
     orgId: string,
@@ -21,6 +26,12 @@ export class ChatAdapter {
     conversation: Record<string, ConversationInfo>
     after?: number[]
   }> {
+    console.log(Date.now(), 'fetch conversation db adapter')
+
+    /**
+     * ⚡ NEW: db.filter() giờ trả về list theo đúng filter,
+     * KHÔNG load toàn bộ 200k record nữa (sẽ sửa bên ChatDB)
+     */
     const { conversations: DB_CONVS } = await db.filter(
       filter,
       after,
@@ -28,7 +39,26 @@ export class ChatAdapter {
       pageIds
     )
 
-    /** sort với last_message_time || create_at */
+    console.log(Date.now(), 'after db filter')
+    /**
+     * Nếu DB_CONVS <= limit thì không cần sort lại → trả thẳng
+     * (đây là case thường xuyên xảy ra)
+     */
+    if (DB_CONVS.length <= limit) {
+      console.log(Date.now(), 'returning directly from db convs')
+      return {
+        conversation: keyBy(DB_CONVS, 'id'),
+        after:
+          DB_CONVS.length > 0
+            ? [DB_CONVS[DB_CONVS.length - 1].last_message_time || 0]
+            : undefined,
+      }
+    }
+    console.log(Date.now(), 'before sorting list')
+    /**
+     * ⚡ Nếu nhiều hơn limit → có thể do filter phức tạp,
+     * fallback sang sort cũ như nguyên bản (đúng logic gốc)
+     */
     let list = orderBy(
       DB_CONVS,
       [
@@ -37,28 +67,33 @@ export class ChatAdapter {
       ],
       ['desc', 'desc']
     )
-
+    console.log(list.length, 'sorted list length')
+    console.log(list[0], 'first item in sorted list')
     /** handle pagination */
     let start_index = 0
-    /** Nếu có giá trị after */
+    console.log(after, 'after value')
     if (after?.length) {
-      /** Lấy list sau after */
-      const IDX = list.findIndex(c => after.includes(c.last_message_time || 0))
-      /** Nếu IDX > 0, tăng giá trị index */
-      if (IDX >= 0) start_index = IDX + 1
+      const lastAfter = after[after.length - 1]
+      const idx = list.findIndex(c => (c.last_message_time || 0) === lastAfter)
+      if (idx >= 0) start_index = idx + 1
     }
-    /** Căt list từ index -> tới index + limit */
+    console.log(start_index, 'start index')
+    /** lấy theo limit */
     const SLICE = list.slice(start_index, start_index + limit)
-    /** Trả lại giá trị after để call lại lần sau - hoặc là undefined */
+    console.log(Date.now(), 'after slice')
     const NEXT_AFTER = SLICE.length
-      ? SLICE.map(c => c.last_message_time || 0) // ✅ number[] tương thích
+      ? [SLICE[SLICE.length - 1].last_message_time || 0]
       : undefined
-
-    /** Trả về conversation và after */
-    return { conversation: keyBy(SLICE, 'id'), after: NEXT_AFTER }
+    console.log(Date.now(), 'end fetch conversation db adapter')
+    return {
+      conversation: keyBy(SLICE, 'id'),
+      after: NEXT_AFTER,
+    }
   }
 
-  /** Lưu Hàm xử lý Lưu zip data */
+  /**
+   * Lưu từ ZIP vào DB (giữ nguyên)
+   */
   static async saveZipData(data: Record<string, ConversationInfo>) {
     return db.saveMany(data)
   }

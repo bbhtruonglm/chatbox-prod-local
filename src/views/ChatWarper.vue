@@ -88,6 +88,8 @@ import type { FacebookCommentPost } from '@/service/interface/app/post'
 import type { StaffSocket } from '@/service/interface/app/staff'
 import type { IAlert } from '@/utils/helper/Alert/type'
 import type { OwnerShipInfo } from '@/service/interface/app/billing'
+import { BackupApp } from '@/utils/api/Backup'
+import { loadZip } from '@/db/ChatZipLoader'
 
 // store
 const pageStore = usePageStore()
@@ -98,6 +100,36 @@ const extensionStore = useExtensionStore()
 const orgStore = useOrgStore()
 
 const { ref_alert_reach_limit } = storeToRefs(commonStore)
+
+// watch(
+//   () => orgStore.selected_org_id,
+//   async (newOrgId, oldOrgId) => {
+//     if (newOrgId && newOrgId !== oldOrgId) {
+//       await preloadBackup(newOrgId)
+//     }
+//   },
+//   { immediate: true }
+// )
+
+// async function preloadBackup(orgId: string) {
+//   if (!orgId) return
+//   try {
+//     const backupApi = new BackupApp('app') // gọi tới module backup
+//     // Lấy thông tin backup cho orgId
+//     const res = await backupApi.post(`backup/get_backup_info?org_id=${orgId}`)
+//     console.log(res, 'ressss')
+
+//     const zipUrl = res?.path_conversation
+//     if (zipUrl) {
+//       await loadZip(zipUrl) // load zip vào IndexedDB
+//       console.log('✅ Backup loaded for org:', orgId)
+//     } else {
+//       console.log('⚠️ No backup available for org:', orgId)
+//     }
+//   } catch (error) {
+//     console.error('Failed to preload backup for org', orgId, error)
+//   }
+// }
 
 // utils
 const { t: $t } = useI18n()
@@ -235,7 +267,7 @@ function initExtensionLogic() {
       // nạp thông tin khách hàng
       if (r?.info) {
         // nếu có thông tin khách hàng thì bật cờ có thông tin mới lên
-        if(conversationStore.select_conversation) {
+        if (conversationStore.select_conversation) {
           conversationStore.select_conversation.has_new_info_from_ext = true
         }
 
@@ -674,7 +706,7 @@ class Main {
   }
 
   /**đánh dấu xem tổ chức này có page zalo không */
-  markOrgHaveZalo(oss: OwnerShipInfo[]){
+  markOrgHaveZalo(oss: OwnerShipInfo[]) {
     /**lọc ra các trang zalo cá nhân */
     pageStore.zlp_oss = oss.filter(
       os => os?.page_info?.type === 'ZALO_PERSONAL'

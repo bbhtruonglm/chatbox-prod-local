@@ -53,7 +53,7 @@ import { usePageManager } from '@/views/Dashboard/composables/usePageManager'
 import { KEY_GET_CHATBOT_USER_FUNCT } from '@/views/Dashboard/symbol'
 import { size } from 'lodash'
 import { storeToRefs } from 'pinia'
-import { provide } from 'vue'
+import { onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import ConnectPage from '@/views/Dashboard/ConnectPage.vue'
@@ -65,6 +65,10 @@ import PlusCircleIcon from '@/components/Icons/PlusCircle.vue'
 import SquaresPlusIcon from '@/components/Icons/SquaresPlus.vue'
 import { ChevronDownIcon } from '@heroicons/vue/24/solid'
 
+import { db } from '@/db/ChatDB'
+import { BackupApp } from '@/utils/api/Backup'
+import ZipWorker from '@/db/zip.worker?worker'
+import { loadOrgData } from '@/db/loadDataOrg'
 const pageStore = usePageStore()
 const selectPageStore = useSelectPageStore()
 const orgStore = useOrgStore()
@@ -76,6 +80,11 @@ const IS_SHOW_PAYMENT = $env.is_show_payment
 
 const { ref_dropdown_pick_connect_platform, connect_page_ref } =
   storeToRefs(pageManagerStore)
+const worker = new ZipWorker()
+
+const loadingState = ref<
+  Record<string, { status: string; count?: number; error?: string }>
+>({})
 
 // composable
 const { getMeChatbotUser } = initRequireData()
@@ -108,6 +117,25 @@ class Main {
   }
 }
 const $main = new Main()
+
+watch(
+  () => orgStore.list_org,
+  async val => {
+    if (!val || !val.length) return
+
+    const results = await loadOrgData(
+      val,
+      ({ orgId, status, count, error }) => {
+        // Cập nhật UI hoặc reactive state
+        loadingState.value[orgId] = { status, count, error }
+        console.log('Worker progress', orgId, status, count, error)
+      }
+    )
+
+    console.log('All orgs loaded', results)
+  },
+  { immediate: true }
+)
 
 // cung cấp hàm này cho component con dùng
 provide(KEY_GET_CHATBOT_USER_FUNCT, getMeChatbotUser)

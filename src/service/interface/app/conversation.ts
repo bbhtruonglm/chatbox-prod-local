@@ -151,6 +151,8 @@ export interface ConversationInfo {
   last_message_id?: string
   /** field thời gian cập nhật cuối cùng  */
   last_update?: number
+
+  org_id?: string
 }
 
 /**dữ liệu khách hàng dạng obj để dễ update */

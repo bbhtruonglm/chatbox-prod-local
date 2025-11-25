@@ -31,7 +31,6 @@ import { N4SerivcePublicPartner } from './utils/api/N4Service/Partner'
 import { error } from './utils/decorator/Error'
 import { Toast } from './utils/helper/Alert/Toast'
 import { QueryString, type IQueryString } from './utils/helper/QueryString'
-
 const commonStore = useCommonStore()
 const $toast = container.resolve(Toast)
 
@@ -126,18 +125,6 @@ class Main {
   }
 }
 const $main = new Main()
-
-onMounted(async () => {
-  try {
-    // chỉ lưu vào Dexie, không gán store
-    await loadZip(
-      'https://chatbox-backup.botbanhang.vn/backup/f48ef6f6bd05467b8b66b1602b27913f/org_id-f48ef6f6bd05467b8b66b1602b27913f-date-1762568491659-conversation.zip'
-    )
-    console.log('✅ Mock data loaded to IndexedDB')
-  } catch (e) {
-    console.error('Failed to load mock zip:', e)
-  }
-})
 
 // lấy token từ param nếu có
 $main.getParamToken()

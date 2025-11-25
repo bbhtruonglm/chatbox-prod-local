@@ -107,6 +107,13 @@ const after = ref<number[]>()
 /**thời gian component được render */
 const mounted_time = ref<Date>(new Date())
 
+const need_fetch_from_api = ref(false)
+onMounted(() => {
+  // Khi vào màn, luôn bật flag cần fetch API
+  need_fetch_from_api.value = true
+  console.log('Mounted → need_fetch_from_api set to true')
+})
+
 /** dữ liệu lọc trừ conversation_type */
 const option_filter_page_data = computed(() => {
   const { conversation_type, ...rest } =
@@ -128,8 +135,8 @@ class Main {
     )
   ) {
     this.loadMoreConversation = throttle(
-      this.loadMoreConversation.bind(this),
-      300
+      this.loadMoreConversation.bind(this)
+      // 300
     )
   }
 
@@ -164,179 +171,6 @@ class Main {
    */
   @loadingV2(is_loading, 'value')
   @error()
-  // async getConversation(is_first_time?: boolean, is_pick_first?: boolean) {
-  //   /** lưu trạng thái có phải load lần đầu không */
-  //   is_loading_first.value = !!is_first_time
-
-  //   /** nếu đang mất mạng thì không cho gọi api */
-  //   if (!commonStore.is_connected_internet) return
-
-  //   /** nếu không có org_id thì thôi */
-  //   if (!orgStore.selected_org_id) return
-
-  //   /**danh sách id page */
-  //   const PAGE_IDS = keys(pageStore.selected_page_id_list)
-  //   /**cấu hình trang đặc biệt */
-  //   const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
-
-  //   /**sort hội thoại */
-  //   const SORT =
-  //     SPECIAL_PAGE_CONFIG?.sort_conversation === 'UNREAD'
-  //       ? 'unread_message_amount:desc,last_message_time:desc'
-  //       : undefined
-
-  //   /**ghi đè 1 số lọc tin nhắn */
-  //   const OVERWRITE_FILTER: FilterConversation = {}
-
-  //   /** chỉ cho hiện hội thoại của nhân viên và */
-  //   /** nếu không phải là chế độ xem bài viết */
-  //   if (
-  //     SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff &&
-  //     conversationStore.option_filter_page_data.conversation_type !== 'POST'
-  //   ) {
-  //     /** tạo ra filter nhân viên */
-  //     OVERWRITE_FILTER.staff_id = []
-
-  //     /** thêm id mới */
-  //     if (chatbotUserStore.chatbot_user?.user_id)
-  //       OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user?.user_id)
-
-  //     /** thêm id cũ, tránh lỗi */
-  //     if (chatbotUserStore.chatbot_user?.fb_staff_id)
-  //       OVERWRITE_FILTER.staff_id?.push(
-  //         chatbotUserStore.chatbot_user?.fb_staff_id
-  //       )
-  //   }
-
-  //   /** dữ liệu hội thoại */
-  //   let res: QueryConversationResponse
-
-  //   try {
-  //     /** lấy dữ liệu hội thoại */
-  //     res = await this.API_CONVERSATION.readConversations(
-  //       PAGE_IDS,
-  //       orgStore.selected_org_id,
-  //       {
-  //         ...conversationStore.option_filter_page_data,
-  //         ...OVERWRITE_FILTER,
-  //       },
-  //       40,
-  //       SORT,
-  //       after.value
-  //     )
-  //   } catch (e) {
-  //     throw e
-  //   } finally {
-  //     /** tắt loading lần đầu */
-  //     is_loading_first.value = false
-  //   }
-
-  //   /**dữ liệu hội thoại */
-  //   const CONVERSATIONS = res.conversation
-
-  //   /** gắn cờ nếu đã hết dữ liệu */
-  //   if (!size(CONVERSATIONS) || !res.after) is_done.value = true
-
-  //   /** lưu lại after mới */
-  //   after.value = res.after
-
-  //   /** format dữ liệu trả về */
-  //   mapValues(CONVERSATIONS, (conversation, key) => {
-  //     /** tạo ra key cho vitual scroll */
-  //     conversation.data_key = key
-
-  //     /** bỏ qua record của page chat cho page */
-  //     if (conversation.fb_page_id === conversation.fb_client_id)
-  //       delete CONVERSATIONS?.[key]
-  //   })
-
-  //   /** thêm vào danh sách conversation */
-  //   conversationStore.conversation_list = {
-  //     ...conversationStore.conversation_list,
-  //     ...CONVERSATIONS,
-  //   }
-
-  //   /** tự động chọn khách hàng cho lần đầu tiên */
-  //   if (is_first_time) $main.selectDefaultConversation(is_pick_first)
-  // }
-  // async getConversation(is_first_time?: boolean, is_pick_first?: boolean) {
-  //   is_loading_first.value = !!is_first_time
-  //   let use_local = true
-
-  //   if (!commonStore.is_connected_internet) return
-  //   if (!orgStore.selected_org_id) return
-
-  //   const PAGE_IDS = keys(pageStore.selected_page_id_list)
-  //   const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
-  //   const SORT =
-  //     SPECIAL_PAGE_CONFIG?.sort_conversation === 'UNREAD'
-  //       ? 'unread_message_amount:desc,last_message_time:desc'
-  //       : undefined
-
-  //   const OVERWRITE_FILTER: FilterConversation = {}
-  //   if (
-  //     SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff &&
-  //     conversationStore.option_filter_page_data.conversation_type !== 'POST'
-  //   ) {
-  //     OVERWRITE_FILTER.staff_id = []
-  //     if (chatbotUserStore.chatbot_user?.user_id)
-  //       OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user.user_id)
-  //     if (chatbotUserStore.chatbot_user?.fb_staff_id)
-  //       OVERWRITE_FILTER.staff_id?.push(
-  //         chatbotUserStore.chatbot_user.fb_staff_id
-  //       )
-  //   }
-
-  //   let res
-  //   try {
-  //     if (use_local) {
-  //       res = await ChatAdapter.fetchConversations(
-  //         PAGE_IDS,
-  //         orgStore.selected_org_id,
-  //         { ...conversationStore.option_filter_page_data, ...OVERWRITE_FILTER },
-  //         40,
-  //         SORT,
-  //         after.value
-  //       )
-  //     } else {
-  //       /** lấy dữ liệu hội thoại */
-  //       res = await this.API_CONVERSATION.readConversations(
-  //         PAGE_IDS,
-  //         orgStore.selected_org_id,
-  //         {
-  //           ...conversationStore.option_filter_page_data,
-  //           ...OVERWRITE_FILTER,
-  //         },
-  //         40,
-  //         SORT,
-  //         after.value
-  //       )
-  //     }
-  //   } catch (e) {
-  //     throw e
-  //   } finally {
-  //     is_loading_first.value = false
-  //   }
-
-  //   const CONVERSATIONS = res.conversation
-  //   if (!size(CONVERSATIONS) || !res.after) is_done.value = true
-
-  //   after.value = res.after // có thể undefined nếu hết dữ liệu
-  //   if (!res.after || size(res.conversation) === 0) is_done.value = true
-
-  //   mapValues(CONVERSATIONS, (conversation, key) => {
-  //     conversation.data_key = key
-  //     if (conversation.fb_page_id === conversation.fb_client_id)
-  //       delete CONVERSATIONS?.[key]
-  //   })
-
-  //   conversationStore.conversation_list = {
-  //     ...conversationStore.conversation_list,
-  //     ...CONVERSATIONS,
-  //   }
-
-  //   if (is_first_time) $main.selectDefaultConversation(is_pick_first)
-  // }
 
   /**
    *  getConversation()
@@ -410,82 +244,95 @@ class Main {
         after?: number[]
       }
 
-      /** AFTER_FOR_FETCH: lấy phần tử đầu tiên của after[] để phân trang */
-      const AFTER_FOR_FETCH: number[] | undefined = after.value?.length
-        ? [after.value[0]]
-        : undefined
-
+      // /** AFTER_FOR_FETCH: lấy phần tử đầu tiên của after[] để phân trang */
+      // const AFTER_FOR_FETCH: number[] | undefined = after.value?.length
+      //   ? [after.value[0]]
+      //   : undefined
+      const AFTER_FOR_FETCH = after.value ?? undefined
+      console.log(AFTER_FOR_FETCH, 'after for fetch')
       /**
        * ----------------------------------------------------------------------------------
        *  MODE LOCAL (IndexedDB)
        * ----------------------------------------------------------------------------------
        */
       if (USE_LOCAL) {
-        const now = Date.now()
+        if (need_fetch_from_api.value) {
+          const now = Date.now()
 
-        /**
-         * 1️ Lấy last_synced_at từ bảng meta để biết lần sync API gần nhất
-         */
-        const LAST_SYNC_META = await db.meta.get('last_synced_at')
-        const LAST_SYNCED_AT = LAST_SYNC_META?.value || 0
-
-        /**
-         * 2️ Lấy last_message_time mới nhất hiện đang có trong IndexedDB
-         */
-        const LAST_CONV = await db.conversations
-          .where('last_message_time')
-          .above(0)
-          .reverse()
-          .first()
-        /** Lấy tạm data từ last message time */
-        const LAST_MESSAGE_TIME = LAST_CONV?.last_message_time || 0
-
-        /**
-         * 3️⃣ Lấy mốc thời gian lớn nhất → là điểm bắt đầu incremental sync
-         */
-        const LAST_TIME = Math.max(LAST_SYNCED_AT, LAST_MESSAGE_TIME)
-
-        /**
-         * 4️⃣ Gọi API incremental:
-         * Chỉ lấy các hội thoại mới/updated từ lastTime → now
-         */
-        try {
-          const INCREAMENTAL_RES =
-            await this.API_CONVERSATION.readConversations(
-              PAGE_IDS,
-              orgStore.selected_org_id,
-              {
-                ...conversationStore.option_filter_page_data,
-                ...OVERWRITE_FILTER,
-                time_range: { gte: LAST_TIME, lte: now },
-              },
-              100,
-              SORT
-            )
-
-          /** Nếu API trả về conversation mới → lưu vào IndexedDB ngay */
-          if (
-            INCREAMENTAL_RES?.conversation &&
-            Object.keys(INCREAMENTAL_RES.conversation).length
-          ) {
-            await db.saveMany(INCREAMENTAL_RES.conversation)
-
-            console.log(
-              `🔥 Synced ${
-                Object.keys(INCREAMENTAL_RES.conversation).length
-              } new conversations BEFORE rendering`
-            )
-          }
-        } catch (e) {
-          console.error(
-            'Failed to fetch incremental conversations from API:',
-            e
+          /**
+           * 1️ Lấy last_synced_at từ bảng meta để biết lần sync API gần nhất
+           */
+          const LAST_SYNC_META = await db.meta.get(
+            `last_update_${PAGE_IDS?.[0]}`
           )
-        } finally {
-          /** Lưu lại thời gian sync để lần sau incremental nhanh hơn */
-          await db.meta.put({ key: 'last_synced_at', value: now })
+          const LAST_SYNCED_AT = LAST_SYNC_META?.value || 0
+
+          /**
+           * 2️ Lấy last_message_time mới nhất hiện đang có trong IndexedDB
+           */
+
+          /** Lấy conversation mới nhất theo page */
+          const LAST_CONV = await db.conversations
+            .where('fb_page_id')
+            .equals(PAGE_IDS[0]) // hoặc lặp qua từng PAGE_IDS nếu muốn fetch incremental từng page
+            .and(c => (c.last_message_time ?? 0) > 0)
+
+            .reverse()
+            .first()
+
+          /** Lấy tạm data từ last message time */
+          const LAST_MESSAGE_TIME = LAST_CONV?.last_message_time || 0
+
+          /**
+           * 3️⃣ Lấy mốc thời gian lớn nhất → là điểm bắt đầu incremental sync
+           */
+          const LAST_TIME = Math.max(LAST_SYNCED_AT, LAST_MESSAGE_TIME)
+
+          /**
+           * 4️⃣ Gọi API incremental:
+           * Chỉ lấy các hội thoại mới/updated từ lastTime → now
+           */
+          try {
+            // console.log('ádjflkajsdlfajsdlkfajdklfajdlfka')
+            const INCREAMENTAL_RES =
+              await this.API_CONVERSATION.readConversations(
+                PAGE_IDS,
+                orgStore.selected_org_id,
+                {
+                  ...conversationStore.option_filter_page_data,
+                  ...OVERWRITE_FILTER,
+                  time_range: { gte: LAST_TIME, lte: now },
+                },
+                100,
+                SORT
+              )
+            // console.log('ládfjkladsflasdjfla')
+            /** Nếu API trả về conversation mới → lưu vào IndexedDB ngay */
+            if (
+              INCREAMENTAL_RES?.conversation &&
+              keys(INCREAMENTAL_RES.conversation).length
+            ) {
+              await db.saveManyFetch(INCREAMENTAL_RES.conversation)
+
+              console.log(
+                `🔥 Synced ${
+                  keys(INCREAMENTAL_RES.conversation).length
+                } new conversations BEFORE rendering`
+              )
+            }
+          } catch (e) {
+            console.error(
+              'Failed to fetch incremental conversations from API:',
+              e
+            )
+          } finally {
+            /** Lưu lại thời gian sync để lần sau incremental nhanh hơn */
+            // await db.meta.put({ key: 'last_synced_at', value: now })
+            need_fetch_from_api.value = false
+          }
         }
 
+        console.log(Date.now(), 'time diff')
         /**
          * 5️⃣ Sau khi sync xong → đọc dữ liệu từ IndexedDB theo filter
          */
@@ -529,7 +376,7 @@ class Main {
 
       /** Nếu không còn conversation mới → báo hết phân trang */
       if (!size(CONVERSATIONS) || !res.after) is_done.value = true
-
+      console.log(res, 'ressss')
       /** Sau mỗi lần fetch → cập nhật after[] để phân trang tiếp */
       after.value = res.after || []
 
@@ -563,50 +410,143 @@ class Main {
    * đếm số lượng hội thoại
    */
   @error()
+  // async countConversation(conversation_type: 'CHAT' | 'POST') {
+  //   /** nếu đang mất mạng thì không cho gọi api */
+  //   if (!commonStore.is_connected_internet) return
+
+  //   /**danh sách id page */
+  //   const PAGE_IDS = keys(pageStore.selected_page_id_list)
+  //   /**cấu hình trang đặc biệt */
+  //   const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
+
+  //   /**ghi đè 1 số lọc tin nhắn */
+  //   const OVERWRITE_FILTER: FilterConversation = {}
+
+  //   /** chỉ cho hiện hội thoại của nhân viên */
+  //   if (SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff) {
+  //     /** tạo ra filter nhân viên */
+  //     OVERWRITE_FILTER.staff_id = []
+
+  //     /** thêm id mới */
+  //     if (chatbotUserStore.chatbot_user?.user_id)
+  //       OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user?.user_id)
+
+  //     /** thêm id cũ, tránh lỗi */
+  //     if (chatbotUserStore.chatbot_user?.fb_staff_id)
+  //       OVERWRITE_FILTER.staff_id?.push(
+  //         chatbotUserStore.chatbot_user?.fb_staff_id
+  //       )
+  //   }
+
+  //   /**lấy dữ liệu hội thoại */
+  //   const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+  //     ...conversationStore.option_filter_page_data,
+  //     ...OVERWRITE_FILTER,
+  //     conversation_type,
+  //   })
+
+  //   /** nếu là đếm số bài viết */
+  //   if (conversation_type === 'POST') {
+  //     conversationStore.count_conversation.post = RES || 0
+  //   }
+
+  //   /** nếu là đếm số hội thoại chat */
+  //   if (conversation_type === 'CHAT') {
+  //     conversationStore.count_conversation.chat = RES || 0
+  //   }
+  // }
   async countConversation(conversation_type: 'CHAT' | 'POST') {
-    /** nếu đang mất mạng thì không cho gọi api */
+    /** Nếu mất mạng → bỏ */
     if (!commonStore.is_connected_internet) return
 
-    /**danh sách id page */
+    const USE_LOCAL = ChatAdapter.use_local
+
+    /** Danh sách page */
     const PAGE_IDS = keys(pageStore.selected_page_id_list)
-    /**cấu hình trang đặc biệt */
+
+    /** Cấu hình trang đặc biệt */
     const SPECIAL_PAGE_CONFIG = this.SERVICE_CALC_SPECIAL_PAGE_CONFIGS.exec()
 
-    /**ghi đè 1 số lọc tin nhắn */
+    /** Filter ghi đè */
     const OVERWRITE_FILTER: FilterConversation = {}
-
-    /** chỉ cho hiện hội thoại của nhân viên */
     if (SPECIAL_PAGE_CONFIG.is_only_visible_client_of_staff) {
-      /** tạo ra filter nhân viên */
       OVERWRITE_FILTER.staff_id = []
 
-      /** thêm id mới */
       if (chatbotUserStore.chatbot_user?.user_id)
-        OVERWRITE_FILTER.staff_id?.push(chatbotUserStore.chatbot_user?.user_id)
+        OVERWRITE_FILTER.staff_id.push(chatbotUserStore.chatbot_user.user_id)
 
-      /** thêm id cũ, tránh lỗi */
       if (chatbotUserStore.chatbot_user?.fb_staff_id)
-        OVERWRITE_FILTER.staff_id?.push(
-          chatbotUserStore.chatbot_user?.fb_staff_id
+        OVERWRITE_FILTER.staff_id.push(
+          chatbotUserStore.chatbot_user.fb_staff_id
         )
     }
 
-    /**lấy dữ liệu hội thoại */
-    const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
-      ...conversationStore.option_filter_page_data,
-      ...OVERWRITE_FILTER,
-      conversation_type,
-    })
+    /**
+     * ------------------------------------------------------------------------------------
+     *  ❌ MODE API DIRECT → không dùng IndexedDB
+     * ------------------------------------------------------------------------------------
+     */
+    if (!USE_LOCAL) {
+      const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+        conversation_type,
+      })
 
-    /** nếu là đếm số bài viết */
-    if (conversation_type === 'POST') {
-      conversationStore.count_conversation.post = RES || 0
+      if (conversation_type === 'POST')
+        conversationStore.count_conversation.post = RES || 0
+
+      if (conversation_type === 'CHAT')
+        conversationStore.count_conversation.chat = RES || 0
+
+      return
     }
 
-    /** nếu là đếm số hội thoại chat */
-    if (conversation_type === 'CHAT') {
-      conversationStore.count_conversation.chat = RES || 0
+    /**
+     * ------------------------------------------------------------------------------------
+     *  ✅ MODE LOCAL (IndexedDB)
+     * ------------------------------------------------------------------------------------
+     * Nếu need_fetch_from_api → gọi API trước rồi mới đếm từ local
+     */
+    if (USE_LOCAL && need_fetch_from_api.value) {
+      const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+        conversation_type,
+      })
+
+      // lưu lại vào store
+      if (conversation_type === 'POST')
+        conversationStore.count_conversation.post = RES || 0
+      if (conversation_type === 'CHAT')
+        conversationStore.count_conversation.chat = RES || 0
+
+      // reset flag
+      need_fetch_from_api.value = false
+
+      return
     }
+
+    /**
+     * ------------------------------------------------------------------------------------
+     *  🔥 MODE LOCAL FULL — KHÔNG FETCH API
+     *  → Đếm trực tiếp từ IndexedDB
+     * ------------------------------------------------------------------------------------
+     */
+    const COUNT = await db.countByPageIds(
+      PAGE_IDS,
+      {
+        ...conversationStore.option_filter_page_data,
+        ...OVERWRITE_FILTER,
+      },
+      conversation_type
+    )
+
+    if (conversation_type === 'POST')
+      conversationStore.count_conversation.post = COUNT
+
+    if (conversation_type === 'CHAT')
+      conversationStore.count_conversation.chat = COUNT
   }
 
   /**xử lý socket conversation */
@@ -994,10 +934,10 @@ class Main {
 
   loadMoreConversation($event: UIEvent) {
     const target = $event.target as HTMLDivElement
-    const PERCENT_SCROLL = 70
-
+    const PERCENT_SCROLL = 90
     const padBehind =
       target.scrollHeight - target.scrollTop - target.clientHeight
+    // console.log(padBehind, is_loading.value, is_done.value)
     if (
       !padBehind ||
       padBehind > target.scrollHeight * (1 - PERCENT_SCROLL / 100) ||

@@ -135,8 +135,8 @@ class Main {
     )
   ) {
     this.loadMoreConversation = throttle(
-      this.loadMoreConversation.bind(this),
-      300
+      this.loadMoreConversation.bind(this)
+      // 300
     )
   }
 
@@ -189,7 +189,7 @@ class Main {
   async getConversation(is_first_time?: boolean, is_pick_first?: boolean) {
     /** Nếu lần đầu gọi → bật loading UI */
     is_loading_first.value = !!is_first_time
-    console.log('nnnnnn')
+
     const USE_LOCAL = ChatAdapter.use_local
 
     /** Không có internet thì dừng luôn */
@@ -244,11 +244,12 @@ class Main {
         after?: number[]
       }
 
-      /** AFTER_FOR_FETCH: lấy phần tử đầu tiên của after[] để phân trang */
-      const AFTER_FOR_FETCH: number[] | undefined = after.value?.length
-        ? [after.value[0]]
-        : undefined
-
+      // /** AFTER_FOR_FETCH: lấy phần tử đầu tiên của after[] để phân trang */
+      // const AFTER_FOR_FETCH: number[] | undefined = after.value?.length
+      //   ? [after.value[0]]
+      //   : undefined
+      const AFTER_FOR_FETCH = after.value ?? undefined
+      console.log(AFTER_FOR_FETCH, 'after for fetch')
       /**
        * ----------------------------------------------------------------------------------
        *  MODE LOCAL (IndexedDB)
@@ -330,6 +331,8 @@ class Main {
             need_fetch_from_api.value = false
           }
         }
+
+        console.log(Date.now(), 'time diff')
         /**
          * 5️⃣ Sau khi sync xong → đọc dữ liệu từ IndexedDB theo filter
          */
@@ -373,7 +376,7 @@ class Main {
 
       /** Nếu không còn conversation mới → báo hết phân trang */
       if (!size(CONVERSATIONS) || !res.after) is_done.value = true
-
+      console.log(res, 'ressss')
       /** Sau mỗi lần fetch → cập nhật after[] để phân trang tiếp */
       after.value = res.after || []
 
@@ -931,10 +934,10 @@ class Main {
 
   loadMoreConversation($event: UIEvent) {
     const target = $event.target as HTMLDivElement
-    const PERCENT_SCROLL = 70
+    const PERCENT_SCROLL = 90
     const padBehind =
       target.scrollHeight - target.scrollTop - target.clientHeight
-    console.log(padBehind, is_loading.value, is_done.value)
+    // console.log(padBehind, is_loading.value, is_done.value)
     if (
       !padBehind ||
       padBehind > target.scrollHeight * (1 - PERCENT_SCROLL / 100) ||

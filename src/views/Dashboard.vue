@@ -68,6 +68,7 @@ import { ChevronDownIcon } from '@heroicons/vue/24/solid'
 import { db } from '@/db/ChatDB'
 import { BackupApp } from '@/utils/api/Backup'
 import ZipWorker from '@/db/zip.worker?worker'
+import { loadOrgData } from '@/db/loadDataOrg'
 const pageStore = usePageStore()
 const selectPageStore = useSelectPageStore()
 const orgStore = useOrgStore()
@@ -117,64 +118,25 @@ class Main {
 }
 const $main = new Main()
 
-// Nhận progress từ Worker
-worker.onmessage = e => {
-  const { orgId, status, count, error } = e.data
-  loadingState.value[orgId] = { status, count, error }
-  console.log('Worker progress', orgId, status, count, error)
-}
-
-// Hàm kiểm tra org nào đã load dữ liệu
-async function initLoadingState(orgs: { org_id: string }[]) {
-  for (const org of orgs) {
-    const lastUpdate = await db.getLastUpdate(org.org_id)
-    if (lastUpdate) {
-      loadingState.value[org.org_id] = { status: 'done' }
-    }
-  }
-}
-
-// Load ZIP cho org chưa có dữ liệu
-async function loadZipsForOrgs(orgs: { org_id: string }[]) {
-  const urls: string[] = []
-  console.log(orgs, 'orgs to load zips')
-  for (const org of orgs) {
-    const orgId = org.org_id
-    const lastUpdate = await db.getLastUpdate(orgId)
-    if (lastUpdate) continue // đã load
-
-    try {
-      const backupApi = new BackupApp('app')
-      const res = await backupApi.post(`backup/get_backup_info?org_id=${orgId}`)
-      const zipUrl = res?.path_conversation
-      if (zipUrl) {
-        urls.push(`${$env.host.backup}/backup/${zipUrl}`)
-        loadingState.value[orgId] = { status: 'loading' }
-      }
-    } catch (err) {
-      loadingState.value[orgId] = {
-        status: 'error',
-        error: (err as Error).message,
-      }
-    }
-  }
-
-  if (urls.length) {
-    worker.postMessage({ type: 'load_zips', urls })
-  }
-}
-
-// Watch orgStore.list_org để reload khi thay đổi org
 watch(
   () => orgStore.list_org,
   async val => {
     if (!val || !val.length) return
 
-    await initLoadingState(val) // đánh dấu org đã load
-    await loadZipsForOrgs(val) // load những org chưa có dữ liệu
+    const results = await loadOrgData(
+      val,
+      ({ orgId, status, count, error }) => {
+        // Cập nhật UI hoặc reactive state
+        loadingState.value[orgId] = { status, count, error }
+        console.log('Worker progress', orgId, status, count, error)
+      }
+    )
+
+    console.log('All orgs loaded', results)
   },
   { immediate: true }
 )
+
 // cung cấp hàm này cho component con dùng
 provide(KEY_GET_CHATBOT_USER_FUNCT, getMeChatbotUser)
 </script>

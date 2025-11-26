@@ -76,6 +76,7 @@ import {
   CalcSpecialPageConfigs,
   type ICalcSpecialPageConfigs,
 } from '@/utils/helper/Conversation/CalcSpecialPageConfigs'
+import { clippingParents } from '@popperjs/core'
 
 /**dữ liệu từ socket */
 interface CustomEvent extends Event {
@@ -389,7 +390,7 @@ class Main {
         if (conversation.fb_page_id === conversation.fb_client_id)
           delete CONVERSATIONS[key]
       })
-
+      console.log(CONVERSATIONS, 'CONVERSATIONS')
       /** Merge kết quả vào conversationStore */
       conversationStore.conversation_list = {
         ...conversationStore.conversation_list,

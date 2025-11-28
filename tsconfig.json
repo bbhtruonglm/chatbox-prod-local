@@ -16,9 +16,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "Node",
-    "ignoreDeprecations": "6.0",
     "allowJs": true, // 👈 thêm dòng này
-    "checkJs": false // (optional) tắt check lỗi JS
+    "checkJs": false, // (optional) tắt check lỗi JS
+    "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
   },
   "references": [
     {

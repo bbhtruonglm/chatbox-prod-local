@@ -151,7 +151,9 @@ export interface ConversationInfo {
   last_message_id?: string
   /** field thời gian cập nhật cuối cùng  */
   last_update?: number
-
+  /** danh sách id bài viết fb */
+  list_fb_post_id?: string[]
+  /** id org */
   org_id?: string
 }
 

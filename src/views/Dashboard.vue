@@ -4,7 +4,7 @@
       <template #right>
         <template v-if="$main.isShowSelectPageButton()">
           <button
-            @click="toggleDropdown"
+            @click="toggle_dropdown"
             class="btn-custom text-sm font-semibold py-2 px-3 bg-slate-200"
           >
             <PlusCircleIcon class="size-4" />
@@ -12,7 +12,7 @@
             <ChevronDownIcon class="size-3" />
           </button>
           <button
-            v-if="size(pageStore.active_page_list)"
+            v-if="size(page_store.active_page_list)"
             @click="$main.toggleModelGroupPage()"
             class="btn-custom text-sm font-semibold py-2 px-3 bg-slate-200"
           >
@@ -29,13 +29,13 @@
       <RouterView />
     </div>
     <DropdownPickConnectPlatform
-      @done="reloadPageData()"
+      @done="reload_page_data()"
       ref="ref_dropdown_pick_connect_platform"
-      :position="pageManagerStore.position"
-      :back="pageManagerStore.back"
+      :position="page_manager_store.position"
+      :back="page_manager_store.back"
     />
     <ConnectPage
-      @done="reloadPageData()"
+      @done="reload_page_data()"
       ref="connect_page_ref"
     />
   </div>
@@ -69,77 +69,80 @@ import { db } from '@/db/ChatDB'
 import { BackupApp } from '@/utils/api/Backup'
 import ZipWorker from '@/db/zip.worker?worker'
 import { loadOrgData } from '@/db/loadDataOrg'
-const pageStore = usePageStore()
-const selectPageStore = useSelectPageStore()
-const orgStore = useOrgStore()
-const pageManagerStore = usePageManagerStore()
+
+const page_store = usePageStore()
+const select_page_store = useSelectPageStore()
+const org_store = useOrgStore()
+const page_manager_store = usePageManagerStore()
 const $route = useRoute()
 
 /** có hiện phần thanh toán hay không */
 const IS_SHOW_PAYMENT = $env.is_show_payment
 
 const { ref_dropdown_pick_connect_platform, connect_page_ref } =
-  storeToRefs(pageManagerStore)
-const worker = new ZipWorker()
+  storeToRefs(page_manager_store)
+const WORKER = new ZipWorker()
 
-const loadingState = ref<
+const loading_state = ref<
   Record<string, { status: string; count?: number; error?: string }>
 >({})
 
-// composable
-const { getMeChatbotUser } = initRequireData()
-const { toggleDropdown, reloadPageData } = usePageManager()
+/** composable */
+const { getMeChatbotUser: get_me_chatbot_user } = initRequireData()
+const { toggleDropdown: toggle_dropdown, reloadPageData: reload_page_data } =
+  usePageManager()
 
 class Main {
   /**vào chế độ chat nhiều trang */
   toggleModelGroupPage() {
-    // reset lại danh sách trang đã chọn nếu đang ở chế độ nhiều tổ chức
-    if (orgStore.is_selected_all_org) pageStore.selected_page_id_list = {}
+    /** reset lại danh sách trang đã chọn nếu đang ở chế độ nhiều tổ chức */
+    if (org_store.is_selected_all_org) page_store.selected_page_id_list = {}
 
-    // toggle chế độ chat nhiều page
-    selectPageStore.toggleGroupPageMode()
+    /** toggle chế độ chat nhiều page */
+    select_page_store.toggleGroupPageMode()
   }
   /**ẩn hiện modal kết nối nền tảng */
   toggleModalConnectPage(key?: string) {
-    pageManagerStore.connect_page_ref?.toggleModal?.(key)
+    page_manager_store.connect_page_ref?.toggleModal?.(key)
   }
 
   /**có hiển thị các nút của trang chọn page không */
   isShowSelectPageButton() {
     return (
-      // đang ở trang chọn page
+      /** đang ở trang chọn page */
       $route.path.includes('select-page') &&
-      // không ở chế độ chat nhiều page
-      (!selectPageStore.is_group_page_mode ||
-        // người dùng chưa có trang nào
-        !size(pageStore.active_page_list))
+      /** không ở chế độ chat nhiều page */
+      (!select_page_store.is_group_page_mode ||
+        /** người dùng chưa có trang nào */
+        !size(page_store.active_page_list))
     )
   }
 }
 const $main = new Main()
 
 watch(
-  () => orgStore.list_org,
+  () => org_store.list_org,
   async val => {
     if (!val || !val.length) return
 
-    const results = await loadOrgData(
-      val,
+    const RESULTS = await loadOrgData(
+      val.filter(o => o.org_id).map(o => ({ org_id: o.org_id! })),
       ({ orgId, status, count, error }) => {
-        // Cập nhật UI hoặc reactive state
-        loadingState.value[orgId] = { status, count, error }
+        /** Cập nhật UI hoặc reactive state */
+        loading_state.value[orgId] = { status, count, error }
         console.log('Worker progress', orgId, status, count, error)
       }
     )
 
-    console.log('All orgs loaded', results)
+    console.log('All orgs loaded', RESULTS)
   },
   { immediate: true }
 )
 
-// cung cấp hàm này cho component con dùng
-provide(KEY_GET_CHATBOT_USER_FUNCT, getMeChatbotUser)
+/** cung cấp hàm này cho component con dùng */
+provide(KEY_GET_CHATBOT_USER_FUNCT, get_me_chatbot_user)
 </script>
+
 <style scoped lang="scss">
 .dashboard-header {
   .btn-custom {

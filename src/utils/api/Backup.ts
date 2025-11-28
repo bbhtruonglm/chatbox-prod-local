@@ -19,12 +19,12 @@ class BackupApp extends Backup {
   }
 
   /**gọi api post lên AI */
-  protected post(path: string, body?: Record<string, any>): Promise<any> {
-    return super.post(path)
+  public post(path: string, body?: Record<string, any>): Promise<any> {
+    return super.post(path, body)
   }
 
   public async preloadBackup(org_id: string): Promise<void> {
-    // dùng org_id truyền vào luôn, không dùng this.org_id
+    /** dùng org_id truyền vào luôn, không dùng this.org_id */
     return super.post('preload_backup', { org_id })
   }
 }

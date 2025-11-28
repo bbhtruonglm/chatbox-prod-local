@@ -1,126 +1,3 @@
-// import type {
-//   ConversationInfo,
-//   FilterConversation,
-// } from '@/service/interface/app/conversation'
-
-// import { db } from './ChatDB'
-
-// export class ChatAdapter {
-//   /** Trạng thái dùng local */
-//   static use_local = true
-
-//   /**
-//    * Lấy danh sách hội thoại (có phân trang + sort + after)
-//    * KHÔNG thay đổi field nào
-//    * KHÔNG thay đổi logic filter cũ
-//    */
-//   static async fetchConversations(
-//     pageIds: string[],
-//     orgId: string,
-//     filter: FilterConversation,
-//     limit = 50,
-//     sort?: string,
-//     after?: number[]
-//   ): Promise<{
-//     conversation: Record<string, ConversationInfo>
-//     after?: number[]
-//   }> {
-//     console.log(Date.now(), 'fetch conversation db adapter')
-
-//     // 1) Lấy từ DB (đã lọc + sort chính xác từ ChatDB.filter)
-//     const { conversations: DB_CONVS } = await db.filter(
-//       filter,
-//       after,
-//       limit,
-//       pageIds
-//     )
-
-//     console.log(Date.now(), 'after db filter')
-
-//     // 2) Nếu số lượng ≤ limit ⇒ trả thẳng (case 99%)
-//     if (DB_CONVS.length <= limit) {
-//       console.log(Date.now(), 'return directly')
-
-//       const last = DB_CONVS[DB_CONVS.length - 1]
-
-//       return {
-//         conversation: Object.fromEntries(DB_CONVS.map(c => [c.id, c])),
-//         after: last ? [last.last_message_time || 0] : undefined,
-//       }
-//     }
-
-//     console.log(Date.now(), 'fallback sort start')
-
-//     // 3) Fallback sort: dùng sort thuần nhanh hơn lodash rất nhiều
-//     const list = DB_CONVS.slice().sort((a, b) => {
-//       const ua = a.unread_message_amount || 0
-//       const ub = b.unread_message_amount || 0
-//       if (ua !== ub) return ub - ua
-
-//       const ta = a.last_message_time || a.createdAt || 0
-//       const tb = b.last_message_time || b.createdAt || 0
-//       return tb - ta
-//     })
-
-//     console.log(list.length, 'sorted list length')
-//     console.log(list[0], 'first item')
-
-//     // 4) Tìm start_index bằng binary search (O(log n))
-//     let start_index = 0
-//     console.log(after, 'after value')
-
-//     if (after?.length) {
-//       const lastAfter = after[after.length - 1]
-//       start_index = ChatAdapter.binarySearchByTime(list, lastAfter)
-//     }
-
-//     console.log(start_index, 'start index')
-
-//     // 5) Slice theo limit
-//     const SLICE = list.slice(start_index, start_index + limit)
-
-//     console.log(Date.now(), 'after slice')
-
-//     const last = SLICE[SLICE.length - 1]
-//     const NEXT_AFTER = last ? [last.last_message_time || 0] : undefined
-
-//     console.log(Date.now(), 'end fetch conversation db adapter')
-
-//     return {
-//       conversation: Object.fromEntries(SLICE.map(c => [c.id, c])),
-//       after: NEXT_AFTER,
-//     }
-//   }
-
-//   /**
-//    * Lưu từ ZIP vào DB (giữ nguyên)
-//    */
-//   static async saveZipData(data: Record<string, ConversationInfo>) {
-//     return db.saveMany(data)
-//   }
-
-//   /**
-//    * Binary search để tìm index của after theo last_message_time 
-//    * Nếu không thấy → trả vị trí chèn (chuẩn loadmore)
-//    */
-//   private static binarySearchByTime(list: ConversationInfo[], time: number) {
-//     let low = 0
-//     let high = list.length - 1
-
-//     while (low <= high) {
-//       const mid = (low + high) >>> 1
-//       const midTime = list[mid].last_message_time || 0
-
-//       if (midTime === time) return mid + 1
-//       if (midTime > time) low = mid + 1
-//       else high = mid - 1
-//     }
-
-//     return low
-//   }
-// }
-
-
 import type {
   ConversationInfo,
   FilterConversation,
@@ -138,8 +15,8 @@ export class ChatAdapter {
    * Sử dụng cursor 2-field [unread_message_amount, last_message_time]
    */
   static async fetchConversations(
-    pageIds: string[],
-    orgId: string,
+    page_ids: string[],
+    org_id: string,
     filter: FilterConversation,
     limit = 50,
     sort?: string,
@@ -148,69 +25,88 @@ export class ChatAdapter {
     conversation: Record<string, ConversationInfo>
     after?: number[]
   }> {
-    console.log(Date.now(), 'fetch conversation db adapter')
-
-    // 1) Lấy từ DB (đã lọc + sort chính xác từ ChatDB.filter)
+    /** 1) Gọi hàm filter của DB để lấy danh sách hội thoại thỏa mãn điều kiện lọc */
     const { conversations: DB_CONVS } = await db.filter(
       filter,
       after,
       limit,
-      pageIds
+      page_ids
     )
 
-    console.log(Date.now(), 'after db filter')
-
-    // 2) Nếu số lượng ≤ limit ⇒ trả thẳng (case phổ biến)
+    /** 2) Kiểm tra nếu số lượng kết quả trả về nhỏ hơn hoặc bằng giới hạn limit */
     if (DB_CONVS.length <= limit) {
-      const last = DB_CONVS[DB_CONVS.length - 1]
+      /** Lấy phần tử cuối cùng trong danh sách để làm cursor cho lần load sau */
+      const LAST = DB_CONVS[DB_CONVS.length - 1]
+
+      /** Trả về kết quả ngay lập tức vì không cần sort lại hay cắt bớt */
       return {
-        conversation: Object.fromEntries(DB_CONVS.map(c => [c.id, c])),
-        after: last
-          ? [last.unread_message_amount || 0, last.last_message_time || 0]
+        /** Chuyển đổi mảng hội thoại thành object map theo ID */
+        conversation: Object.fromEntries(
+          DB_CONVS.map(c => [c.id, c] as [string, ConversationInfo])
+        ),
+        /** Tạo cursor next_after từ phần tử cuối cùng nếu có */
+        after: LAST
+          ? [LAST.unread_message_amount || 0, LAST.last_message_time || 0]
           : undefined,
       }
     }
 
-    console.log(Date.now(), 'fallback sort start')
+    /** 3) Fallback sort: Sắp xếp lại danh sách theo logic native để đảm bảo thứ tự đúng nhất */
+    const LIST = DB_CONVS.slice().sort((a, b) => {
+      /** Lấy số lượng tin nhắn chưa đọc của a */
+      const UNREAD_A = a.unread_message_amount || 0
+      /** Lấy số lượng tin nhắn chưa đọc của b */
+      const UNREAD_B = b.unread_message_amount || 0
 
-    // 3) Fallback sort: native sort nhanh, DESC [unread, time]
-    const list = DB_CONVS.slice().sort((a, b) => {
-      const ua = a.unread_message_amount || 0
-      const ub = b.unread_message_amount || 0
-      if (ua !== ub) return ub - ua
+      /** Nếu số lượng chưa đọc khác nhau, ưu tiên số lớn hơn lên trước (DESC) */
+      if (UNREAD_A !== UNREAD_B) return UNREAD_B - UNREAD_A
 
-      const ta = a.last_message_time || a.createdAt || 0
-      const tb = b.last_message_time || b.createdAt || 0
-      return tb - ta
+      /** Lấy thời gian tin nhắn cuối của a, nếu không có thì dùng createdAt */
+      const TIME_A =
+        a.last_message_time ||
+        (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+      /** Lấy thời gian tin nhắn cuối của b, nếu không có thì dùng createdAt */
+      const TIME_B =
+        b.last_message_time ||
+        (b.createdAt ? new Date(b.createdAt).getTime() : 0)
+
+      /** Sắp xếp theo thời gian giảm dần (mới nhất lên trước) */
+      return TIME_B - TIME_A
     })
 
-    console.log(list.length, 'sorted list length')
-    console.log(list[0], 'first item')
-
-    // 4) Tìm start_index bằng binary search cursor 2-field
+    /** 4) Tìm vị trí bắt đầu (start_index) bằng thuật toán tìm kiếm nhị phân dựa trên cursor */
     let start_index = 0
+    /** Nếu có cursor (after) gồm 2 phần tử [unread, time] */
     if (after?.length === 2) {
-      start_index = ChatAdapter.binarySearchByCursor(list, after)
+      /** Gọi hàm binarySearchByCursor để tìm index phù hợp trong danh sách đã sort */
+      start_index = ChatAdapter.binarySearchByCursor(
+        LIST,
+        after as [number, number]
+      )
     }
 
-    console.log(start_index, 'start index')
+    /** 5) Cắt danh sách từ vị trí start_index với độ dài limit */
+    const SLICE = LIST.slice(start_index, start_index + limit)
 
-    // 5) Slice theo limit
-    const SLICE = list.slice(start_index, start_index + limit)
+    /** Lấy phần tử cuối cùng của danh sách đã cắt để làm cursor mới */
+    const LAST = SLICE[SLICE.length - 1]
 
-    const last = SLICE[SLICE.length - 1]
-    const NEXT_AFTER = last
-      ? [last.unread_message_amount || 0, last.last_message_time || 0]
+    /** Tạo cursor next_after từ phần tử cuối cùng nếu tồn tại */
+    const NEXT_AFTER = LAST
+      ? [LAST.unread_message_amount || 0, LAST.last_message_time || 0]
       : undefined
 
+    /** Trả về object chứa map conversation và cursor after */
     return {
-      conversation: Object.fromEntries(SLICE.map(c => [c.id, c])),
+      conversation: Object.fromEntries(
+        SLICE.map(c => [c.id, c] as [string, ConversationInfo])
+      ),
       after: NEXT_AFTER,
     }
   }
 
   /**
-   * Lưu từ ZIP vào DB (giữ nguyên)
+   * Lưu từ ZIP vào DB
    */
   static async saveZipData(data: Record<string, ConversationInfo>) {
     return db.saveMany(data)
@@ -224,27 +120,43 @@ export class ChatAdapter {
     list: ConversationInfo[],
     cursor: [number, number]
   ) {
-    const [cUnread, cTime] = cursor
+    /** Giải nén cursor thành unread và time */
+    const [CURSOR_UNREAD, CURSOR_TIME] = cursor
+    /** Khởi tạo chỉ số đầu (low) */
     let low = 0
+    /** Khởi tạo chỉ số cuối (high) */
     let high = list.length - 1
 
+    /** Vòng lặp tìm kiếm nhị phân: chạy khi low <= high */
     while (low <= high) {
-      const mid = (low + high) >>> 1
-      const midUnread = list[mid].unread_message_amount || 0
-      const midTime = list[mid].last_message_time || 0
+      /** Tính chỉ số giữa (mid) */
+      const MID = (low + high) >>> 1
+      /** Lấy số lượng tin nhắn chưa đọc tại vị trí mid */
+      const MID_UNREAD = list[MID].unread_message_amount || 0
+      /** Lấy thời gian tin nhắn cuối tại vị trí mid */
+      const MID_TIME = list[MID].last_message_time || 0
 
-      if (midUnread === cUnread && midTime === cTime) {
-        return mid + 1
+      /** Nếu tìm thấy phần tử trùng khớp hoàn toàn với cursor */
+      if (MID_UNREAD === CURSOR_UNREAD && MID_TIME === CURSOR_TIME) {
+        /** Trả về vị trí ngay sau nó (để bắt đầu load trang tiếp theo) */
+        return MID + 1
       }
 
-      // DESC order: nếu mid lớn hơn cursor → qua bên phải
-      if (midUnread > cUnread || (midUnread === cUnread && midTime > cTime)) {
-        low = mid + 1
+      /** DESC order: so sánh để quyết định tìm bên trái hay bên phải */
+      /** Nếu mid lớn hơn cursor (unread lớn hơn HOẶC unread bằng nhưng time lớn hơn) */
+      if (
+        MID_UNREAD > CURSOR_UNREAD ||
+        (MID_UNREAD === CURSOR_UNREAD && MID_TIME > CURSOR_TIME)
+      ) {
+        /** Giá trị cần tìm nằm ở phía sau (bên phải), tăng low */
+        low = MID + 1
       } else {
-        high = mid - 1
+        /** Giá trị cần tìm nằm ở phía trước (bên trái), giảm high */
+        high = MID - 1
       }
     }
 
+    /** Trả về vị trí chèn phù hợp nếu không tìm thấy khớp chính xác */
     return low
   }
 }

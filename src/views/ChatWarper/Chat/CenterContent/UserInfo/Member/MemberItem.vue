@@ -90,7 +90,7 @@ function confirmDeleteMember() {
     /** nếu hủy thì thôi */
     if (is_cancel) return
     /** xóa các tập tin đã chọn */
-    handleRemoveMember(props.member_id)
+    // handleRemoveMember(props.member_id)
   })
 }
 </script>

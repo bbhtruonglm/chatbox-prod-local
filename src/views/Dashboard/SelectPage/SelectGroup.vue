@@ -18,7 +18,7 @@
       </button>
     </div> -->
     <div class="flex-grow">
-      <Group :org_id="orgStore?.selected_org_id || ''"/>
+      <Group :org_id="orgStore?.selected_org_id || ''" />
     </div>
     <button class="px-5 flex-shrink-0">
       <Cog6ToothIcon
@@ -51,9 +51,13 @@ class Main {
     delete orgStore.selected_org_group[orgStore.selected_org_id]
   }
   /**đọc danh sách nhóm */
+  // async readGroup(): Promise<void> {
+  //   // đọc toàn bộ nhóm từ server
+  //   groups.value = await new BillingAppGroup().readGroup()
+  // }
   async readGroup(): Promise<void> {
     // đọc toàn bộ nhóm từ server
-    groups.value = await new BillingAppGroup().readGroup()
+    groups.value = await new BillingAppGroup().readAllGroup()
   }
   /**chọn nhóm */
   selectGroup(group_id?: string): void {
@@ -85,7 +89,10 @@ const $main = new Main()
 // lấy danh sách nhóm khi thành phần được khởi tạo
 onMounted(() => $main.readGroup())
 
-watch(() => orgStore.selected_org_id, () => $main.readGroup())
+watch(
+  () => orgStore.selected_org_id,
+  () => $main.readGroup()
+)
 </script>
 <style lang="scss" scoped>
 .group__btn--base {

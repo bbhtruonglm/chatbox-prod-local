@@ -58,6 +58,14 @@
       @error="onImageError"
       @load="removeAnimatePulse"
       loading="lazy"
+      v-if="conversation?.platform_type === 'TIKTOK'"
+      :src="loadImageUrl(conversation?.platform_type)"
+      class="w-full h-full"
+    />
+    <img
+      @error="onImageError"
+      @load="removeAnimatePulse"
+      loading="lazy"
       v-if="
         conversation?.platform_type === 'ZALO_OA' && conversation?.client_avatar
       "
@@ -85,19 +93,21 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useConversationStore } from '@/stores'
 import { nameToLetter } from '@/service/helper/format'
+import { useConversationStore } from '@/stores'
 import { Cdn, SingletonCdn, type ICdn } from '@/utils/helper/Cdn'
+import { onMounted, ref } from 'vue'
 
 import PageAvatar from '@/components/Avatar/PageAvatar.vue'
 
 import type { ConversationInfo } from '@/service/interface/app/conversation'
+import type { PageType } from '@/service/interface/app/page'
 import type { FacebookCommentPost } from '@/service/interface/app/post'
 import { container } from 'tsyringe'
-import type { PageType } from '@/service/interface/app/page'
 
 const $cdn = SingletonCdn.getInst()
+/** Các nền tảng có avatar */
+const NO_AVT_PLATFORMS = ['ZALO', 'TIKTOK']
 
 const $props = withDefaults(
   defineProps<{
@@ -121,15 +131,17 @@ const conversationStore = useConversationStore()
 const animate_pulse = ref('animate-pulse')
 
 onMounted(() => {
-  // tắt hiệu ứng với dạng web
+  /** tắt hiệu ứng với dạng web */
   if ($props.conversation?.platform_type === 'WEBSITE') removeAnimatePulse()
-
-  // nếu zalo không có hình ảnh
+  /** tắt hiệu ứng với các nền tảng không có avatar */
   if (
-    $props.conversation?.platform_type?.includes('ZALO') &&
+    NO_AVT_PLATFORMS.some(p =>
+      $props.conversation?.platform_type?.includes(p)
+    ) &&
     !$props.conversation?.client_avatar
-  )
+  ) {
     removeAnimatePulse()
+  }
 })
 
 /**tạo bg dựa trên chữ cái */
@@ -163,7 +175,12 @@ function loadImageUrl(platform_type?: PageType) {
       $props.conversation?.fb_page_id,
       $props.conversation?.fb_client_id
     )
-
+  if (platform_type === 'TIKTOK') {
+    return $cdn.tiktokClientAvt(
+      $props.conversation?.fb_page_id,
+      $props.conversation?.fb_client_id
+    )
+  }
   return $cdn.fbClientAvt(
     $props.conversation?.fb_page_id,
     $props.conversation?.fb_client_id

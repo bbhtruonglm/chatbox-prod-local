@@ -45,8 +45,8 @@
         <!-- <Loading class="mx-auto" /> -->
       </div>
       <!-- <template v-if="orgStore.is_selected_all_org"> -->
-        <AllOrg />
-        <GroupPageAction />
+      <AllOrg />
+      <GroupPageAction />
       <!-- </template> -->
       <!-- <template v-else>
         <EmptyPage

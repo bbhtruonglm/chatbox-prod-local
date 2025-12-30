@@ -85,6 +85,9 @@ const source: Language = {
   'Cài đặt Extension': 'Install Extension',
   "Gửi tin nhắn đến _. Sử dụng '/' để trả lời nhanh.":
     'Send a message to {name}. Use "/" to reply quickly.',
+
+  "Trả lời từ _. Sử dụng '/' để trả lời nhanh.":
+    'Send a from {name}. Use "/" to reply quickly.',
   'Hiện chấm màu có chú giải': 'Show color dot with tooltip',
   'Chỉ hiện chấm màu': 'Show color dot only',
   'Hiện văn bản': 'Show text',
@@ -99,6 +102,7 @@ const source: Language = {
   'Chọn Tổ chức cần kết nối': 'Select the organization to connect',
   'Kích hoạt Trang': 'Activate Page',
   'Kết nối Trang Facebook': 'Connect Facebook Page',
+  'Kết nối Trang Tiktok': 'Connect TikTok Page',
   'Kết nối Trang Instagram': 'Connect Instagram Page',
   'Kết nối Trang WhatsApp Business và Cá nhân':
     'Connect WhatsApp Business and Personal Page',
@@ -296,6 +300,10 @@ const source: Language = {
   'Giới tính': 'Gender',
   'Không xác định': 'Unknown',
   name: 'English',
+
+  'Kết nối với Tiktok': 'Connect with TikTok',
+  'Kết nối với Tiktok để chat nhiều Trang tự động với AI, tối ưu chi phí Marketing với CAPI, tự động tích hợp các ứng dụng của Doanh nghiệp.':
+    'Connect with TikTok to chat automatically across multiple Pages with AI, optimize marketing costs with CAPI, and automatically integrate your business applications.',
   v1: {
     common: {
       zalo: 'Zalo',
@@ -329,6 +337,24 @@ const source: Language = {
       select_all: 'Select all',
       active: 'Activate',
       chatbox: 'Chatbox',
+
+      add_customer: 'Add Customer',
+      create_new_group: 'Create New Group',
+      search_member: 'Search for Member',
+
+      create_group: 'Create Group',
+      your_group_name: 'Your Group Name',
+      create_zalo_group: 'Create Zalo Group',
+      member_selected: 'Member Selected',
+      confirm_remove_member:
+        'Are you sure you want to remove this member from the group?',
+
+      no_data: 'No members',
+      list_member: 'List members',
+      add_member: 'Add member',
+      reset_select: 'Reset change',
+      remove_member: 'Remove member',
+
       unsupport_message:
         'This message content cannot be displayed currently, please contact the system administrator.',
       close: 'Close',
@@ -355,6 +381,20 @@ const source: Language = {
       copy: 'Copy',
       continue: 'Continue',
       warning: 'Warning',
+      copy_success: 'Copied',
+      hide: 'Hide',
+      show: 'Show',
+      reset: 'Reset Token',
+      token_org: 'Token Org',
+      reset_token_confirm:
+        'Are you sure you want to change the access token? This will stop all APIs from working.',
+      create_new_token: 'Create new token',
+      tiktok: 'Tiktok',
+      add_member_success: 'Add member success',
+      remove_member_success: 'Remove member success',
+      sending_message: 'Sending message...',
+      sent_success: 'Sent success',
+      sent_failed: 'Sent failed',
     },
     view: {
       network: {
@@ -754,6 +794,8 @@ const source: Language = {
           chat: {
             has_send: '{name} sent a message: {message}',
             new_message_alert: 'New message alert',
+
+            reply_message: 'Reply to message',
             filter: {
               title: 'Filter messages',
               interact: {
@@ -851,6 +893,7 @@ const source: Language = {
             action: {
               open_url: 'Go to link',
               open_facebook: 'Facebook profile',
+              open_tiktok: 'Tiktok profile',
               open_inbox: 'Open Facebook inbox',
               mark_unread: 'Mark message as unread',
               block_user: 'Block user',
@@ -932,6 +975,8 @@ const source: Language = {
                 place_order: 'Place order',
                 create_transaction: 'Create transaction',
                 schedule_appointment: 'Schedule appointment',
+                accept: 'Accept',
+                decline: 'Decline',
               },
               widget: {
                 not_active: 'Widget not found',

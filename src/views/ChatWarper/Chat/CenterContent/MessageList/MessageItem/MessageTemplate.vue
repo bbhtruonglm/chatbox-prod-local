@@ -58,7 +58,7 @@
         }"
         v-if="data_source?.content"
         @click="clickCopyPhoneEmail"
-        v-html="fixXss($markdown.render(renderTextV2(data_source?.content)))"
+        v-html="fixXss($markdown.render(renderTextWithMentions))"
       />
       <p
         v-if="
@@ -86,7 +86,7 @@ import { clickCopyPhoneEmail, renderTextV2 } from '@/service/function'
 import { MarkedService } from '@/utils/helper/Markdown'
 import DOMPurify from 'dompurify'
 import { container } from 'tsyringe'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 import Action from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/MessageTemplate/Action.vue'
 import Media from '@/views/ChatWarper/Chat/CenterContent/MessageList/MessageItem/MessageTemplate/Media.vue'
@@ -116,6 +116,13 @@ const $props = withDefaults(
     attachment_size?: AttachmentSize
     /**dữ liệu của tin nhắn */
     message: MessageInfo
+    /**danh sách mentions trong tin nhắn */
+    mentions?: Array<{
+      uid: string
+      pos: number
+      len: number
+      type: number
+    }>
   }>(),
   {}
 )
@@ -136,12 +143,48 @@ const ref_message_content = ref<HTMLElement | null>(null)
 /** cờ check xem hết nội dung nếu nội dung quá dài */
 const is_view_full = ref(false)
 
+/** render text với mentions được highlight */
+const renderTextWithMentions = computed(() => {
+  /** nếu không có mentions hoặc không có content thì trả về text gốc */
+  if (!$props.mentions || !$props.data_source?.content) {
+    return renderTextV2($props.data_source?.content || '')
+  }
+
+  let text = $props.data_source.content
+
+  /** sắp xếp mentions theo vị trí giảm dần để không làm ảnh hưởng offset */
+  const mentions_sorted = [...$props.mentions].sort((a, b) => b.pos - a.pos)
+
+  /** thêm highlight cho từng mention */
+  for (const mention of mentions_sorted) {
+    const before = text.substring(0, mention.pos)
+    const mention_text = text.substring(mention.pos, mention.pos + mention.len)
+    const after = text.substring(mention.pos + mention.len)
+
+    /** wrap mention text với span có background xanh */
+    text =
+      before +
+      `<span class="bg-blue-100 text-blue-600 px-1 rounded font-medium">${mention_text}</span>` +
+      after
+  }
+
+  return text
+})
+
 // theo dõi khi có socket update tin nhắn hiện tại
 watch(
   () => $props.data_source?.is_ai,
   is_ai => {
     // -> true: tức là tin nhắn mới được xử lý AI -> đóng content
     if (is_ai) is_expanded.value = false
+  }
+)
+// theo dõi khi có socket update tin nhắn hiện tại
+watch(
+  () => $props.data_source,
+  value => {
+    // -> true: tức là tin nhắn mới được xử lý AI -> đóng content
+    console.log(value, 'value')
   }
 )
 

@@ -27,7 +27,7 @@
           ref="connect_page_ref"
         />
         <div>
-          {{ getPageName(page_info)}}
+          {{ getPageName(page_info) }}
         </div>
       </div>
     </template>

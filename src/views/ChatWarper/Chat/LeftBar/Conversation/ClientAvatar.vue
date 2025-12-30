@@ -35,7 +35,7 @@ const orgStore = useOrgStore()
 function controlPageAvatarVisible() {
   /**thiết lập tổ chức */
   const ORG_CONFIG = orgStore.selected_org_info?.org_config
-  
+
   /**thiết lập cá nhân */
   const USER_CONFIG = chatbotUserStore.personal_settings
 

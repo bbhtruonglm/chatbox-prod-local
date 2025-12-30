@@ -100,11 +100,7 @@
 <script setup lang="ts">
 import { getPageName } from '@/service/function'
 import { nonAccentVn } from '@/service/helper/format'
-import {
-  useOrgStore,
-  usePageStore,
-  useWidgetStore
-} from '@/stores'
+import { useOrgStore, usePageStore, useWidgetStore } from '@/stores'
 import { N4SerivceAppPage } from '@/utils/api/N4Service/Page'
 import { pickBy, size } from 'lodash'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'

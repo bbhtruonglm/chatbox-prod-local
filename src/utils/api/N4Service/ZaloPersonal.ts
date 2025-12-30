@@ -1,9 +1,10 @@
-import type { FacebookCommentPost } from '@/service/interface/app/post'
 import { N4Serivce } from '@/utils/api/N4Serivce'
 import { singleton } from 'tsyringe'
 
 /**Thông tin của một thành viên trong nhóm*/
 export interface IGroupMember {
+  /**id của thành viên*/
+  client_id?: string
   /**Tên của thành viên*/
   client_name?: string
   /**avatar của thành viên*/

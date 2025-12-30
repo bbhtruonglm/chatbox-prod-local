@@ -111,7 +111,7 @@ function isPageAdmin(page: PageData): boolean {
 /**click chọn vào 1 trang */
 function selectPage() {
   // nếu mất kết nối thì thôi- để trong PageItem xử lý bật modal để kết nối lại
-  if($props.page_info?.is_disconnected) return
+  if ($props.page_info?.is_disconnected) return
 
   // nếu là mobile thì thông báo tải app
   if ($device.isMobile()) return $router.push('/download-app')

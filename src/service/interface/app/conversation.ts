@@ -187,7 +187,8 @@ export interface QueryResetReadConversation extends QueryOneConversation {
 /**đầu vào của api đói assign nhân viên */
 export interface QuerySetAssignStaffConversation extends QueryOneConversation {
   /**id của nhân viên mới được assign */
-  new_staff_id: string
+  new_staff_id: string | undefined
+
   /**id của nhân viên cũ */
   old_staff_id?: string
 }

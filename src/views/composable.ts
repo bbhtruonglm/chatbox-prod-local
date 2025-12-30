@@ -1,15 +1,15 @@
-import { read_me_chatbot_user } from '@/service/api/chatbox/n4-service'
-import { getCurrentOrgInfo } from '@/service/function'
-import { toastError } from '@/service/helper/alert'
-import { flow } from '@/service/helper/async'
-import { handleFileLocal } from '@/service/helper/file'
-import { getItem } from '@/service/helper/localStorage'
 import { useChatbotUserStore, useMessageStore, useOrgStore } from '@/stores'
+
 import { BillingAppOrganization } from '@/utils/api/Billing'
+import type { CbError } from '@/service/interface/function'
+import { flow } from '@/service/helper/async'
+import { getCurrentOrgInfo } from '@/service/function'
+import { getItem } from '@/service/helper/localStorage'
+import { handleFileLocal } from '@/service/helper/file'
 import { map } from 'lodash'
 import { onMounted } from 'vue'
-
-import type { CbError } from '@/service/interface/function'
+import { read_me_chatbot_user } from '@/service/api/chatbox/n4-service'
+import { toastError } from '@/service/helper/alert'
 
 /** load các dữ liệu cần thiết của giao diện */
 export function initRequireData() {
@@ -85,6 +85,6 @@ export function useDropFile() {
     map($event.dataTransfer?.files, file => handleFileLocal(file))
   }
   return {
-    onDropFile
+    onDropFile,
   }
 }

@@ -12,7 +12,7 @@ export class ChatAdapter {
   /**
    * Lấy danh sách hội thoại (có phân trang + sort + after)
    * KHÔNG thay đổi field nào
-   * Sử dụng cursor 2-field [unread_message_amount, last_message_time]
+   * Sắp xếp theo last_message_time (mới nhất lên trước)
    */
   static async fetchConversations(
     page_ids: string[],
@@ -44,23 +44,13 @@ export class ChatAdapter {
         conversation: Object.fromEntries(
           DB_CONVS.map(c => [c.id, c] as [string, ConversationInfo])
         ),
-        /** Tạo cursor next_after từ phần tử cuối cùng nếu có */
-        after: LAST
-          ? [LAST.unread_message_amount || 0, LAST.last_message_time || 0]
-          : undefined,
+        /** Tạo cursor next_after từ phần tử cuối cùng nếu có (chỉ dùng last_message_time) */
+        after: LAST ? [LAST.last_message_time || 0] : undefined,
       }
     }
 
-    /** 3) Fallback sort: Sắp xếp lại danh sách theo logic native để đảm bảo thứ tự đúng nhất */
+    /** 3) Fallback sort: Sắp xếp theo last_message_time giảm dần (mới nhất lên trước) */
     const LIST = DB_CONVS.slice().sort((a, b) => {
-      /** Lấy số lượng tin nhắn chưa đọc của a */
-      const UNREAD_A = a.unread_message_amount || 0
-      /** Lấy số lượng tin nhắn chưa đọc của b */
-      const UNREAD_B = b.unread_message_amount || 0
-
-      /** Nếu số lượng chưa đọc khác nhau, ưu tiên số lớn hơn lên trước (DESC) */
-      if (UNREAD_A !== UNREAD_B) return UNREAD_B - UNREAD_A
-
       /** Lấy thời gian tin nhắn cuối của a, nếu không có thì dùng createdAt */
       const TIME_A =
         a.last_message_time ||
@@ -76,13 +66,10 @@ export class ChatAdapter {
 
     /** 4) Tìm vị trí bắt đầu (start_index) bằng thuật toán tìm kiếm nhị phân dựa trên cursor */
     let start_index = 0
-    /** Nếu có cursor (after) gồm 2 phần tử [unread, time] */
-    if (after?.length === 2) {
-      /** Gọi hàm binarySearchByCursor để tìm index phù hợp trong danh sách đã sort */
-      start_index = ChatAdapter.binarySearchByCursor(
-        LIST,
-        after as [number, number]
-      )
+    /** Nếu có cursor (after) gồm 1 phần tử [time] */
+    if (after?.length === 1) {
+      /** Gọi hàm binarySearchByTime để tìm index phù hợp trong danh sách đã sort */
+      start_index = ChatAdapter.binarySearchByTime(LIST, after[0])
     }
 
     /** 5) Cắt danh sách từ vị trí start_index với độ dài limit */
@@ -91,10 +78,8 @@ export class ChatAdapter {
     /** Lấy phần tử cuối cùng của danh sách đã cắt để làm cursor mới */
     const LAST = SLICE[SLICE.length - 1]
 
-    /** Tạo cursor next_after từ phần tử cuối cùng nếu tồn tại */
-    const NEXT_AFTER = LAST
-      ? [LAST.unread_message_amount || 0, LAST.last_message_time || 0]
-      : undefined
+    /** Tạo cursor next_after từ phần tử cuối cùng nếu tồn tại (chỉ dùng last_message_time) */
+    const NEXT_AFTER = LAST ? [LAST.last_message_time || 0] : undefined
 
     /** Trả về object chứa map conversation và cursor after */
     return {
@@ -113,15 +98,13 @@ export class ChatAdapter {
   }
 
   /**
-   * Binary search theo cursor [unread, last_message_time] DESC
+   * Binary search theo last_message_time DESC
    * Trả index chèn (start_index) cho loadmore
    */
-  private static binarySearchByCursor(
+  private static binarySearchByTime(
     list: ConversationInfo[],
-    cursor: [number, number]
+    cursor_time: number
   ) {
-    /** Giải nén cursor thành unread và time */
-    const [CURSOR_UNREAD, CURSOR_TIME] = cursor
     /** Khởi tạo chỉ số đầu (low) */
     let low = 0
     /** Khởi tạo chỉ số cuối (high) */
@@ -131,23 +114,18 @@ export class ChatAdapter {
     while (low <= high) {
       /** Tính chỉ số giữa (mid) */
       const MID = (low + high) >>> 1
-      /** Lấy số lượng tin nhắn chưa đọc tại vị trí mid */
-      const MID_UNREAD = list[MID].unread_message_amount || 0
       /** Lấy thời gian tin nhắn cuối tại vị trí mid */
       const MID_TIME = list[MID].last_message_time || 0
 
       /** Nếu tìm thấy phần tử trùng khớp hoàn toàn với cursor */
-      if (MID_UNREAD === CURSOR_UNREAD && MID_TIME === CURSOR_TIME) {
+      if (MID_TIME === cursor_time) {
         /** Trả về vị trí ngay sau nó (để bắt đầu load trang tiếp theo) */
         return MID + 1
       }
 
       /** DESC order: so sánh để quyết định tìm bên trái hay bên phải */
-      /** Nếu mid lớn hơn cursor (unread lớn hơn HOẶC unread bằng nhưng time lớn hơn) */
-      if (
-        MID_UNREAD > CURSOR_UNREAD ||
-        (MID_UNREAD === CURSOR_UNREAD && MID_TIME > CURSOR_TIME)
-      ) {
+      /** Nếu mid lớn hơn cursor time */
+      if (MID_TIME > cursor_time) {
         /** Giá trị cần tìm nằm ở phía sau (bên phải), tăng low */
         low = MID + 1
       } else {

@@ -15,7 +15,7 @@ export function composableService() {
       if (!INPUT_CHAT) return
 
       // đánh dấu đang gõ
-      commonStore.is_typing = true
+      commonStore.is_typing = !!text
 
       // thay đổi nội dung chat
       INPUT_CHAT.innerText = text

@@ -1,12 +1,12 @@
-import { N4Serivce } from '@/utils/api/N4Serivce'
-
 import type {
   IPage,
   PageList,
   PageWebsiteCreate,
 } from '@/service/interface/app/page'
+
 import type { AllStaffList } from '@/service/interface/app/staff'
 import type { LocationQueryValue } from 'vue-router'
+import { N4Serivce } from '@/utils/api/N4Serivce'
 import { singleton } from 'tsyringe'
 
 /**dữ liệu của trang hiện tại kích hoạt */
@@ -21,7 +21,7 @@ export interface CurrentPageData {
 @singleton()
 export class N4SerivceAppPage extends N4Serivce {
   constructor() {
-    // gọi API module page của chatbot
+    /** gọi API module page của chatbot */
     super('app/page')
   }
 
@@ -29,11 +29,17 @@ export class N4SerivceAppPage extends N4Serivce {
   public async getListPage(
     body?: Record<string, any>
   ): Promise<CurrentPageData> {
-    // gọi api
+    /** gọi api */
     return this.post('get_current_page', body)
   }
+  public async getListActivePage(
+    body?: Record<string, any>
+  ): Promise<CurrentPageData> {
+    // gọi api
+    return this.post('get_available_pages', body)
+  }
   /**
-   * đọc danh sách trang đang kích hoạt của tổ chức 
+   * đọc danh sách trang đang kích hoạt của tổ chức
    * @param org_id id tổ chức
    * @param group_id lọc theo id nhóm
    */
@@ -41,12 +47,12 @@ export class N4SerivceAppPage extends N4Serivce {
     org_id: string,
     group_id?: string
   ): Promise<CurrentPageData> {
-    // gọi api
+    /** gọi api */
     return this.getListPage({ org_id, is_active: true, group_id })
   }
   /**đồng bộ lại danh sách trang mới nhất của Facebook với hệ thống */
   public async syncFacebookPage(access_token: string): Promise<void> {
-    // gọi api
+    /** gọi api */
     return this.post('sync_facebook_page', { access_token })
   }
   /**tạo ra url cấp quyền của zalo oa */
@@ -61,7 +67,7 @@ export class N4SerivceAppPage extends N4Serivce {
       let query_path =
         '/dashboard/select-page?connect_page=ZALO&zalo_type=ZALO_OA'
 
-      // nếu là deploy ở /chat/xxx thì cần thêm
+      /** nếu là deploy ở /chat/xxx thì cần thêm */
       if (location?.pathname?.indexOf('/chat/') === 0)
         query_path = '/chat' + query_path
 
@@ -76,10 +82,10 @@ export class N4SerivceAppPage extends N4Serivce {
         redirect_uri: CALLBACK_URL,
       })
 
-      // trả về kết quả
+      /** trả về kết quả */
       return RESULT
     } catch (e) {
-      // nếu có lỗi thì bắn ra
+      /** nếu có lỗi thì bắn ra */
       throw e
     }
   }
@@ -87,7 +93,7 @@ export class N4SerivceAppPage extends N4Serivce {
   public async syncZaloOaPage(
     payload: Record<string, string | LocationQueryValue[] | undefined>
   ): Promise<void> {
-    // gọi api
+    /** gọi api */
     return this.post('sync_zalo_oa_page', payload)
   }
   /**
@@ -101,7 +107,7 @@ export class N4SerivceAppPage extends N4Serivce {
     page_ids: string[],
     is_raw_error?: boolean
   ): Promise<PageList> {
-    // gọi api
+    /** gọi api */
     return this.post(
       'get_page_info_to_chat',
       {
@@ -116,7 +122,7 @@ export class N4SerivceAppPage extends N4Serivce {
    * @param body thông tin trang
    */
   public async createWebsite(body: PageWebsiteCreate): Promise<IPage> {
-    // gọi api
+    /** gọi api */
     return this.post('create_website_page', body, true)
   }
   /**kết nối, tái đồng bộ tài khoản IG */
@@ -125,12 +131,34 @@ export class N4SerivceAppPage extends N4Serivce {
     redirect_uri: string,
     org_id?: string
   ): Promise<void> {
-    // gọi api
+    /** gọi api */
     return this.post('sync_instagram_page', { code, redirect_uri, org_id })
+  }
+  /**kết nối, tái đồng bộ tài khoản IG */
+  public async syncTiktokPage(
+    code: string,
+    redirect_uri: string,
+    org_id?: string,
+    state?: string
+  ): Promise<void> {
+    /** gọi api */
+    return this.post('tiktok/sync_tiktok_page', {
+      code,
+      redirect_uri,
+      org_id,
+      state,
+    })
+  }
+  /**k Lấy link kết nối với tiktok */
+  public async getTiktokUri(redirect_uri: string): Promise<void> {
+    /** gọi api */
+    return this.post('tiktok/get_tiktok_auth_url', {
+      redirect_uri,
+    })
   }
   /**kết nối tài khoản zalo cá nhân */
   public async syncZaloPersonalPage(org_id?: string): Promise<string> {
-    // gọi api
+    /** gọi api */
     return this.post('sync_zalo_personal_page', { org_id })
   }
 }

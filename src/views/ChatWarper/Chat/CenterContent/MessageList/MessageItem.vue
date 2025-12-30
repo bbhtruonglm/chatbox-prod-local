@@ -9,40 +9,63 @@
       :position="message_type === 'client' ? 'RIGHT' : 'LEFT'"
       :message_type="message?.message_type"
     /> -->
-    <ReplyMessage
-      v-if="reply_message"
-      :message="reply_message"
-    />
-    <AttachmentMessage
-      v-if="isSpecialCase()"
-      :message="message"
-      :type="message_type === 'client' ? 'CLIENT' : 'PAGE'"
-    />
+    <div class="grid">
+      <!-- Overlay cho trạng thái thu hồi -->
+      <div
+        v-if="message.is_undo"
+        class="col-start-1 row-start-1 z-20 pointer-events-none flex items-end justify-end p-1"
+      >
+        <!-- <span
+          class="text-[10px] font-medium text-slate-600 bg-white/90 px-2 py-0.5 rounded shadow-sm border border-slate-100"
+        >
+          {{ $t('Tin nhắn đã bị thu hồi') }}
+        </span> -->
+      </div>
 
-    <SliderWarper
-      v-else
-      :count_element="message_source?.length"
-    >
-      <!-- 
-    không được xoá :key, nếu không sẽ lỗi, 
-    do vue 3 for 2 mảng lồng nhau gặp vấn đề về binding
-    sẽ bị binding nhầm data cũ
-    -->
-      <MessageTemplate
-        v-for="data_source of message_source"
-        :key="message?._id"
-        :class="addOnClassTemplate()"
-        :data_source="data_source"
-        :is_fix_size="message_source?.length > 1"
-        :message_type="message?.message_type"
-        :attachment_size
-        :message
-      />
-      <PhoneAction
-        :message
-        v-if="messageStore.list_message_id === 'list-message'"
-      />
-    </SliderWarper>
+      <!-- Nội dung tin nhắn (làm mờ khi đang thu hồi hoặc đã thu hồi) -->
+      <div
+        class="col-start-1 row-start-1"
+        :class="{
+          'opacity-60 pointer-events-none': message.is_undo,
+        }"
+      >
+        <ReplyMessage
+          v-if="reply_message"
+          :message="reply_message"
+        />
+        <AttachmentMessage
+          v-if="isSpecialCase()"
+          :message="message"
+          :type="message_type === 'client' ? 'CLIENT' : 'PAGE'"
+        />
+
+        <SliderWarper
+          v-else
+          :count_element="message_source?.length"
+        >
+          <!-- 
+        không được xoá :key, nếu không sẽ lỗi, 
+        do vue 3 for 2 mảng lồng nhau gặp vấn đề về binding
+        sẽ bị binding nhầm data cũ
+        -->
+          <MessageTemplate
+            v-for="data_source of message_source"
+            :key="message?._id"
+            :class="addOnClassTemplate()"
+            :data_source="data_source"
+            :is_fix_size="message_source?.length > 1"
+            :message_type="message?.message_type"
+            :attachment_size
+            :message
+            :mentions="message?.raw?.data?.mentions"
+          />
+          <PhoneAction
+            :message
+            v-if="messageStore.list_message_id === 'list-message'"
+          />
+        </SliderWarper>
+      </div>
+    </div>
     <!-- <div
       v-if="message?.reaction?.emoji"
       class="absolute text-xs -bottom-2 -right-1"
@@ -50,7 +73,11 @@
       {{ message?.reaction?.emoji }}
     </div> -->
     <Emotion
-      :position="message_type === 'client' ? 'RIGHT' : 'LEFT'"
+      :position="
+        message_type === 'page' || message.sender_id === message.fb_page_id
+          ? 'LEFT'
+          : 'RIGHT'
+      "
       :message
     />
     <SlowReply
@@ -86,6 +113,29 @@
         !CHECK_SLOW_REPLY.isSystemSlowReply()
       "
     />
+    <MessageReaction
+      v-if="
+        (message_type === 'client' ||
+          message_type === 'page' ||
+          message_type === 'group') &&
+        !message.is_undo
+      "
+      :fb_page_id="message.fb_page_id"
+      :sender_id="message.sender_id"
+      :message="message"
+    />
+    <MessageOtherAction
+      v-if="
+        (message_type === 'client' ||
+          message_type === 'page' ||
+          message_type === 'group') &&
+        !message.is_undo
+      "
+      :fb_page_id="message.fb_page_id"
+      :sender_id="message.sender_id"
+      :message="message"
+    />
+    <!-- :sender_id="message.sender_id" -->
   </div>
 </template>
 <script setup lang="ts">
@@ -114,6 +164,8 @@ import type {
 } from '@/service/interface/app/message'
 import { composableService } from '@/views/ChatWarper/Chat/CenterContent/MessageList/service'
 import { container } from 'tsyringe'
+import MessageReaction from './MessageReaction.vue'
+import MessageOtherAction from './MessageOtherAction.vue'
 
 const { MessageService } = composableService()
 
@@ -153,112 +205,6 @@ const attachments = computed(() => $props.message?.message_attachments)
 const primary_emotion = computed(() => $props.message?.ai?.[0]?.emotion)
 /**AI đánh dấu tin này bị rep chậm */
 const is_ai_slow_reply = computed(() => $props.message?.is_ai_slow_reply)
-/**dữ liệu của tin nhắn */
-// const message_source = computed<MessageTemplateInput[]>(() => {
-//   /**
-//    * - chỉ lấy dữ liệu của attr đầu tiên
-//    * - nếu có nhiều attr thì xử lý kiểu khác (hiện tại chỉ có FB là có list attr là dạng ảnh)
-//    */
-//   const SOURCE = attachments.value?.[0]
-
-//   /**kết quả trả về */
-//   let result: MessageTemplateInput[] = []
-
-//   // nếu không attr -> văn bản thuần tuý | nếu không có thì báo lỗi
-//   if (!SOURCE?.payload)
-//     result.push({
-//       is_ai: false,
-//       content:
-//         text.value || postback_title.value || $t('v1.common.unsupport_message'),
-//     })
-
-//   // nếu chỉ có các nút bấm -> chỉ tạo 1 record
-//   if (SOURCE?.payload?.buttons)
-//     result.push({
-//       is_ai: false,
-//       // nút bấm sẽ kèm theo một nội dung tin nhắn nào đó
-//       content: text.value,
-//       // map lại dữ liệu nút bấm
-//       list_button: formatButton(SOURCE.payload.buttons),
-//     })
-
-//   // nếu là dạng element (slider, file đã xử lý AI) -> tạo 1 mảng dữ liệu
-//   if (SOURCE?.payload?.elements)
-//     result.push(
-//       ...SOURCE?.payload?.elements?.map((element, index) => {
-//         /**dữ liệu của 1 template */
-//         let res: MessageTemplateInput = {}
-
-//         // tạm thời chỉ hiện AI với image
-//         if ($props.message?.ai?.[0]?.ocr) res.is_ai = true
-//         else res.is_ai = false
-
-//         // thêm dữ liệu AI nếu có
-//         if ($props.message?.ai?.[index]) res.ai = $props.message?.ai?.[index]
-
-//         // tiêu đề
-//         res.title = element.title
-//         // nội dung văn bản, hoặc url file fb không hiển thị được
-//         res.content = element.subtitle || text.value || element.url
-//         // dữ liệu ocr của AI
-//         res.ocr = $props.message?.ai?.[0]?.ocr
-//         // danh sách nút bấm
-//         if (element?.buttons) res.list_button = formatButton(element?.buttons)
-
-//         // hình ảnh của slider
-//         if (element.image_url) res.image = { url: element.image_url }
-
-//         // video của AI
-//         if (element.video_url) res.video = { url: element.video_url }
-//         // âm thanh của AI
-//         if (element.audio_url) res.audio = { url: element.audio_url }
-//         // file của AI
-//         if (element.file_url) res.file = { url: element.file_url }
-
-//         // trả về dữ liệu
-//         return res
-//       })
-//     )
-
-//   // nếu chỉ có url (là file nhưng chưa xử lý AI, link dạng fallback) -> tạo 1 record
-//   if (SOURCE?.payload?.url && !SOURCE?.payload?.elements) {
-//     /**dữ liệu của 1 template */
-//     let res: MessageTemplateInput = {}
-
-//     // tính là chưa xử lý AI
-//     res.is_ai = false
-
-//     // hình ảnh
-//     if (SOURCE?.type === 'image') res.image = { url: SOURCE.payload.url }
-//     // video
-//     if (SOURCE?.type === 'video') res.video = { url: SOURCE.payload.url }
-//     // âm thanh
-//     if (SOURCE?.type === 'audio') res.audio = { url: SOURCE.payload.url }
-//     // tập tin khác
-//     if (SOURCE?.type === 'file') res.file = { url: SOURCE.payload.url }
-//     // link
-//     if (SOURCE?.type === 'fallback') {
-//       res.title = text.value
-//       res.content = SOURCE.payload.title
-//       res.list_button = [
-//         {
-//           title: $t('v1.view.main.dashboard.chat.action.open_url'),
-//           url: SOURCE.payload.url,
-//           type: 'web_url',
-//         },
-//       ]
-//     }
-
-//     // trường hợp vừa có ảnh vừa có text
-//     if (text.value) res.content = text.value
-
-//     // trả về dữ liệu
-//     result.push(res)
-//   }
-
-//   // trả về mảng
-//   return result
-// })
 
 const message_source = computed<MessageTemplateInput[]>(() =>
   $mesage_service.genMessageSource(

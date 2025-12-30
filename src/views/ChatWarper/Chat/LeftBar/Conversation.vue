@@ -16,9 +16,12 @@
       :items="map(conversationStore.conversation_list)"
       :item-size="86"
       key-field="data_key"
-      v-slot="{ item }"
+      v-slot="{ item, index }"
     >
-      <ConversationItem :source="item" />
+      <ConversationItem
+        :source="item"
+        :index="index"
+      />
     </RecycleScroller>
     <div v-else>
       <img
@@ -52,7 +55,17 @@ import { error } from '@/utils/decorator/Error'
 import { loadingV2 } from '@/utils/decorator/Loading'
 import { waterfall } from 'async'
 import { differenceInHours } from 'date-fns'
-import { find, keys, map, mapValues, pick, set, size, throttle } from 'lodash'
+import {
+  find,
+  keys,
+  map,
+  mapValues,
+  pick,
+  set,
+  size,
+  throttle,
+  values,
+} from 'lodash'
 import { container } from 'tsyringe'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -258,84 +271,132 @@ class Main {
        */
       if (USE_LOCAL) {
         if (need_fetch_from_api.value) {
-          const now = Date.now()
+          const SYNC_KEY = `sync_cursor_${PAGE_IDS[0]}`
 
-          /**
-           * 1️ Lấy last_synced_at từ bảng meta để biết lần sync API gần nhất
-           */
-          const LAST_SYNC_META = await db.meta.get(
-            `last_update_${PAGE_IDS?.[0]}`
-          )
-          const LAST_SYNCED_AT = LAST_SYNC_META?.value || 0
-
-          /**
-           * 2️ Lấy last_message_time mới nhất hiện đang có trong IndexedDB
-           */
-
-          /** Lấy conversation mới nhất theo page */
-          const LAST_CONV = await db.conversations
-            .where('fb_page_id')
-            .equals(PAGE_IDS[0]) // hoặc lặp qua từng PAGE_IDS nếu muốn fetch incremental từng page
-            .and(c => (c.last_message_time ?? 0) > 0)
-
-            .reverse()
-            .first()
-
-          /** Lấy tạm data từ last message time */
-          const LAST_MESSAGE_TIME = LAST_CONV?.last_message_time || 0
-
-          /**
-           * 3️⃣ Lấy mốc thời gian lớn nhất → là điểm bắt đầu incremental sync
-           */
-          const LAST_TIME = Math.max(LAST_SYNCED_AT, LAST_MESSAGE_TIME)
-
-          /**
-           * 4️⃣ Gọi API incremental:
-           * Chỉ lấy các hội thoại mới/updated từ lastTime → now
-           */
           try {
-            // console.log('ádjflkajsdlfajsdlkfajdklfajdlfka')
-            const INCREAMENTAL_RES =
-              await this.API_CONVERSATION.readConversations(
-                PAGE_IDS,
-                orgStore.selected_org_id,
-                {
-                  ...conversationStore.option_filter_page_data,
-                  ...OVERWRITE_FILTER,
-                  time_range: { gte: LAST_TIME, lte: now },
-                },
-                100,
-                SORT
-              )
-            // console.log('ládfjkladsflasdjfla')
-            /** Nếu API trả về conversation mới → lưu vào IndexedDB ngay */
-            if (
-              INCREAMENTAL_RES?.conversation &&
-              keys(INCREAMENTAL_RES.conversation).length
-            ) {
-              await db.saveManyFetch(INCREAMENTAL_RES.conversation)
+            /**
+             * 🔍 Check for saved cursor (resume từ lần F5 trước)
+             */
+            const SAVED_CURSOR_META = await db.meta.get(SYNC_KEY)
+            const HAS_SAVED_CURSOR = SAVED_CURSOR_META?.value?.length > 0
 
+            /**
+             * 🚀 Phase 1: Fetch Head (Blocking) - Luôn fetch 50 đầu tiên để hiển thị
+             */
+            const HEAD_RES = await this.API_CONVERSATION.readConversations(
+              PAGE_IDS,
+              orgStore.selected_org_id,
+              {
+                ...conversationStore.option_filter_page_data,
+                ...OVERWRITE_FILTER,
+              },
+              50,
+              SORT
+            )
+
+            if (HEAD_RES?.conversation && keys(HEAD_RES.conversation).length) {
+              await db.saveManyFetch(HEAD_RES.conversation)
+            }
+
+            /**
+             * 🔄 Phase 2: Background Sync (Non-blocking)
+             * - Nếu có saved cursor → Resume từ vị trí cũ (F5 case)
+             * - Nếu không có → Bắt đầu từ HEAD_RES.after
+             */
+            const START_CURSOR = HAS_SAVED_CURSOR
+              ? SAVED_CURSOR_META!.value
+              : HEAD_RES?.after
+
+            // Nếu không có cursor nào → không cần sync nữa
+            if (START_CURSOR?.length) {
               console.log(
-                `🔥 Synced ${
-                  keys(INCREAMENTAL_RES.conversation).length
-                } new conversations BEFORE rendering`
+                '🔄 Starting background sync...',
+                HAS_SAVED_CURSOR ? '(Resuming)' : '(Fresh)'
               )
+
+              // Start background sync immediately (IIFE)
+              setTimeout(async () => {
+                try {
+                  let loop_after: number[] = START_CURSOR
+                  let loop = true
+
+                  while (loop) {
+                    const RES = await this.API_CONVERSATION.readConversations(
+                      PAGE_IDS,
+                      orgStore.selected_org_id!,
+                      {
+                        ...conversationStore.option_filter_page_data,
+                        ...OVERWRITE_FILTER,
+                      },
+                      50,
+                      SORT,
+                      loop_after
+                    )
+
+                    const CONVS = RES?.conversation || {}
+                    const KEYS_ARR = keys(CONVS)
+
+                    if (!KEYS_ARR.length) {
+                      await db.meta.delete(SYNC_KEY)
+                      console.log('✅ Background sync completed - No more data')
+                      loop = false
+                      break
+                    }
+
+                    // Check Overlap TRƯỚC khi save
+                    const LAST_KEY = KEYS_ARR[KEYS_ARR.length - 1]
+                    const LAST_ITEM_API = CONVS[LAST_KEY]
+                    const DB_ID = `${LAST_ITEM_API.fb_page_id}_${LAST_ITEM_API.fb_client_id}`
+                    const DB_ITEM = await db.conversations.get(DB_ID)
+
+                    // Save to DB
+                    await db.saveManyFetch(CONVS)
+
+                    // Check overlap - nếu tìm thấy data trùng với DB cũ thì dừng
+                    if (DB_ITEM) {
+                      const DB_TIME = DB_ITEM.last_message_time || 0
+                      const API_TIME = LAST_ITEM_API.last_message_time || 0
+                      if (Math.abs(API_TIME - DB_TIME) < 1000) {
+                        await db.meta.delete(SYNC_KEY)
+                        console.log(
+                          '✅ Background sync completed - Overlap found'
+                        )
+                        loop = false
+                        break
+                      }
+                    }
+
+                    // Update cursor và lưu NGAY LẬP TỨC để resume nếu bị ngắt
+                    if (RES.after?.length) {
+                      loop_after = RES.after
+                      await db.meta.put({ key: SYNC_KEY, value: loop_after })
+                    } else {
+                      await db.meta.delete(SYNC_KEY)
+                      console.log('✅ Background sync completed - End of data')
+                      loop = false
+                    }
+
+                    // Yield CPU
+                    await new Promise(r => setTimeout(r, 100))
+                  }
+                } catch (e) {
+                  console.error('Background sync error:', e)
+                  // Không xóa cursor khi lỗi → lần sau sẽ resume
+                }
+              }, 0) // setTimeout 0 để đảm bảo UI render trước
             }
           } catch (e) {
-            console.error(
-              'Failed to fetch incremental conversations from API:',
-              e
-            )
+            console.error('Failed to fetch head conversations:', e)
           } finally {
-            /** Lưu lại thời gian sync để lần sau incremental nhanh hơn */
-            // await db.meta.put({ key: 'last_synced_at', value: now })
             need_fetch_from_api.value = false
           }
         }
 
         console.log(Date.now(), 'time diff')
+
         /**
          * 5️⃣ Sau khi sync xong → đọc dữ liệu từ IndexedDB theo filter
+         * ⚡ Đã tối ưu với compound indexes trong ChatDB v5
          */
         res = await ChatAdapter.fetchConversations(
           PAGE_IDS,
@@ -348,6 +409,89 @@ class Main {
           SORT,
           AFTER_FOR_FETCH
         )
+
+        /**
+         * 🕵️‍♀️ Gap Detection (Continuity Check)
+         * Nếu thời gian của item lấy được (CURR_TIME) cách quá xa so với cursor (PREV_TIME)
+         * -> Có thể do DB bị thủng (Gap) đoạn giữa.
+         * -> Cần call API để lấp gap ngay lập tức.
+         */
+        if (AFTER_FOR_FETCH?.length && keys(res.conversation).length) {
+          const PREV_TIME = AFTER_FOR_FETCH[0]
+          // ChatAdapter đã sort, lấy item đầu tiên
+          const FIRST_ITEM = values(res.conversation)[0]
+          const CURR_TIME = FIRST_ITEM?.last_message_time || 0
+
+          // Nếu lệch quá 5 phút -> Nghi vấn có Gap
+          if (PREV_TIME - CURR_TIME > 5 * 60 * 1000) {
+            const FILL_RES = await this.API_CONVERSATION.readConversations(
+              PAGE_IDS,
+              orgStore.selected_org_id,
+              {
+                ...conversationStore.option_filter_page_data,
+                ...OVERWRITE_FILTER,
+              },
+              40,
+              SORT,
+              AFTER_FOR_FETCH
+            )
+
+            if (FILL_RES?.conversation && keys(FILL_RES.conversation).length) {
+              await db.saveManyFetch(FILL_RES.conversation)
+
+              // Đọc lại từ DB sau khi fill
+              res = await ChatAdapter.fetchConversations(
+                PAGE_IDS,
+                orgStore.selected_org_id,
+                {
+                  ...conversationStore.option_filter_page_data,
+                  ...OVERWRITE_FILTER,
+                },
+                40,
+                SORT,
+                AFTER_FOR_FETCH
+              )
+            }
+          }
+        }
+
+        /**
+         * 6️⃣ Gap Fill: Nếu DB trả về ít hơn limit (có thể do hết data trong DB)
+         * → Gọi API fetch thêm data cũ hơn (history) và lưu vào DB
+         * Giúp xử lý trường hợp:
+         * - Backup quá cũ, chưa có data mới
+         * - Load more chạm vào vùng data chưa sync
+         */
+        if (keys(res.conversation).length < 40) {
+          const GAP_RES = await this.API_CONVERSATION.readConversations(
+            PAGE_IDS,
+            orgStore.selected_org_id,
+            {
+              ...conversationStore.option_filter_page_data,
+              ...OVERWRITE_FILTER,
+            },
+            40,
+            SORT,
+            AFTER_FOR_FETCH
+          )
+
+          if (GAP_RES?.conversation && keys(GAP_RES.conversation).length) {
+            await db.saveManyFetch(GAP_RES.conversation)
+
+            // Đọc lại từ DB sau khi đã fill data
+            res = await ChatAdapter.fetchConversations(
+              PAGE_IDS,
+              orgStore.selected_org_id,
+              {
+                ...conversationStore.option_filter_page_data,
+                ...OVERWRITE_FILTER,
+              },
+              40,
+              SORT,
+              AFTER_FOR_FETCH
+            )
+          }
+        }
       } else {
         /**
          * ----------------------------------------------------------------------------------
@@ -505,10 +649,11 @@ class Main {
 
     /**
      * ------------------------------------------------------------------------------------
-     *  ✅ MODE LOCAL (IndexedDB)
+     *  ✅ MODE LOCAL (IndexedDB) - ĐÃ TỐI ƯU VỚI COMPOUND INDEXES
      * ------------------------------------------------------------------------------------
-     * Nếu need_fetch_from_api → gọi API trước rồi mới đếm từ local
      */
+
+    /** Lần đầu cần fetch từ API để có baseline count */
     if (USE_LOCAL && need_fetch_from_api.value) {
       const RES = await this.API_CONVERSATION.countConversation(PAGE_IDS, {
         ...conversationStore.option_filter_page_data,
@@ -516,13 +661,11 @@ class Main {
         conversation_type,
       })
 
-      // lưu lại vào store
       if (conversation_type === 'POST')
         conversationStore.count_conversation.post = RES || 0
       if (conversation_type === 'CHAT')
         conversationStore.count_conversation.chat = RES || 0
 
-      // reset flag
       need_fetch_from_api.value = false
 
       return
@@ -530,8 +673,8 @@ class Main {
 
     /**
      * ------------------------------------------------------------------------------------
-     *  🔥 MODE LOCAL FULL — KHÔNG FETCH API
-     *  → Đếm trực tiếp từ IndexedDB
+     *  🔥 MODE LOCAL FULL → Đếm trực tiếp từ IndexedDB
+     *  ⚡ Đã tối ưu với compound index [fb_page_id+conversation_type] trong ChatDB v5
      * ------------------------------------------------------------------------------------
      */
     const COUNT = await db.countByPageIds(
@@ -757,11 +900,13 @@ class Main {
     /** nếu không cần đếm hội thoại thì thôi */
     if (!is_count_conversation) return
 
-    /** lấy số lượng các hội thoại chat */
-    await this.countConversation('CHAT')
-
-    /** lấy số lượng các hội thoại zalo */
-    await this.countConversation('POST')
+    /** Chạy song song để tối ưu tốc độ (thay vì chạy tuần tự) */
+    await Promise.all([
+      /** Lấy số lượng các hội thoại chat */
+      this.countConversation('CHAT'),
+      /** Lấy số lượng các hội thoại post */
+      this.countConversation('POST'),
+    ])
   }
   /**tự động chọn một khách hàng để hiển thị danh sách tin nhắn */
   selectDefaultConversation(is_pick_first?: boolean) {

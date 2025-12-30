@@ -13,6 +13,12 @@
       class="w-full h-full"
     />
     <img
+      loading="lazy"
+      v-else-if="page_info?.type === 'TIKTOK'"
+      :src="loadImageUrl()"
+      class="w-full h-full"
+    />
+    <img
       v-else-if="page_info?.avatar"
       loading="lazy"
       :src="page_info?.avatar"

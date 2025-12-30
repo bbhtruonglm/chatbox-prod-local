@@ -1,24 +1,25 @@
-import { read_link_org } from '@/service/api/chatbox/billing'
-import { preGoToChat } from '@/service/function'
-import { nonAccentVn } from '@/service/helper/format'
+import type { PageData, PageList } from '@/service/interface/app/page'
+import { isEmpty, keys, map, pickBy, size } from 'lodash'
 import {
   useOrgStore,
   usePageManagerStore,
   usePageStore,
   useSelectPageStore,
 } from '@/stores'
-import { N4SerivceAppPage } from '@/utils/api/N4Service/Page'
-import { error } from '@/utils/decorator/Error'
-import { loading } from '@/utils/decorator/Loading'
-import { Toast } from '@/utils/helper/Alert/Toast'
-import { keys, map, pickBy, size } from 'lodash'
-import { container } from 'tsyringe'
-import { toRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import type { PageData, PageList } from '@/service/interface/app/page'
 import type { ModalPosition } from '@/service/interface/vue'
+import { N4SerivceAppPage } from '@/utils/api/N4Service/Page'
+import { Toast } from '@/utils/helper/Alert/Toast'
+import { container } from 'tsyringe'
+import { error } from '@/utils/decorator/Error'
+import { loading } from '@/utils/decorator/Loading'
+import { mapValues } from 'lodash'
 import { nextTick } from 'async'
+import { nonAccentVn } from '@/service/helper/format'
+import { preGoToChat } from '@/service/function'
+import { read_link_org } from '@/service/api/chatbox/billing'
+import { toRef } from 'vue'
 
 export function usePageManager() {
   const pageStore = usePageStore()
@@ -36,7 +37,7 @@ export function usePageManager() {
     reloadPageData() {
       // nếu chọn tất cả tổ chức
       this.getALlOrgAndPage()
-      // if (orgStore.is_selected_all_org) 
+      // if (orgStore.is_selected_all_org)
       // // nếu chọn 1 tổ chức
       // else this.getOrgPages(orgStore.selected_org_id)
     }
@@ -53,9 +54,9 @@ export function usePageManager() {
       pageManagerStore.connect_page_ref?.toggleModal?.(key)
     }
     /**
-     * lấy toàn bộ các page đang được kích hoạt của 1 tổ chức 
+     * lấy toàn bộ các page đang được kích hoạt của 1 tổ chức
      * @deprecated logic cũ đã dùng filter bên front-end nên không cần nữa
-    */
+     */
     @loading(toRef(selectPageStore, 'is_loading'))
     @error($toast)
     async getOrgPages(org_id?: string): Promise<void> {
@@ -70,7 +71,7 @@ export function usePageManager() {
         org_id,
         orgStore.selected_org_group[orgStore.selected_org_id || '']
       )
-
+      // console.log(RES, 'ressssss123123123')
       pageStore.active_page_list = RES?.page_list || {}
     }
     /**có hiển thị các nút của trang chọn page không */
@@ -92,13 +93,23 @@ export function usePageManager() {
       pageStore.all_page_list = {}
 
       /**toàn bộ các trang của người dùng */
-      const PAGE_DATA = await new N4SerivceAppPage().getListPage({})
+
+      const PAGE_DATA_2 = await new N4SerivceAppPage().getListActivePage({})
+      // const PAGE_DATA = await new N4SerivceAppPage().getListPage({})
 
       // nếu không có dữ liệu trang thì thôi
-      if (!PAGE_DATA?.page_list) return
+      if (isEmpty(PAGE_DATA_2)) return
 
       // lưu trữ dữ liệu trang
-      pageStore.all_page_list = PAGE_DATA?.page_list
+      // pageStore.all_page_list = PAGE_DATA?.page_list || {}
+      pageStore.all_page_list = mapValues(PAGE_DATA_2, item => {
+        return {
+          group_admin_id: '', // mặc định
+          staff_list: {}, // mặc định
+          widget_list: [], // phải là mảng rỗng thay vì undefined
+          page: item || {}, // đảm bảo có object page
+        }
+      })
 
       // lấy dữ liệu mapping tổ chức và trang
       pageStore.map_orgs = await read_link_org(keys(pageStore.all_page_list))
@@ -132,16 +143,16 @@ export function usePageManager() {
       page_to_org_map: Record<string, string>,
       selected_org_group: Record<string, string>
     ): PageList {
-      return  pickBy(page_list, (page, id) => {
+      return pickBy(page_list, (page, id) => {
         /** id của tổ chức của trang hiện tại */
-        const PAGE_ORG_ID = page_to_org_map[id] 
+        const PAGE_ORG_ID = page_to_org_map[id]
 
         /** id của nhóm của trang hiện tại */
         const PAGE_GROUP_ID = pape_to_group_map[id]
 
         /** nếu tổ chức đó đang không lọc theo nhóm thì thôi */
         if (!selected_org_group[PAGE_ORG_ID]) return true
-        
+
         /** nếu có thì cần lọc đúng những page của nhóm đã chọn */
         return PAGE_GROUP_ID?.includes(selected_org_group[PAGE_ORG_ID])
       })
@@ -218,12 +229,9 @@ export function usePageManager() {
 
     /** logic các trang theo nền tảng */
     filterPageByPlatform(page_list: PageList, platform: string): PageList {
-      return pickBy(page_list, (page) => {
+      return pickBy(page_list, page => {
         // zalo là ngoại lệ vì gộp 2 tab vào 1
-        if (
-          platform === 'ZALO' &&
-          page?.page?.type?.includes('ZALO')
-        )
+        if (platform === 'ZALO' && page?.page?.type?.includes('ZALO'))
           return true
 
         // nếu chọn nền tảng cụ thể mà trang không thuộc nền tảng đó thì không hiển thị
@@ -240,8 +248,8 @@ export function usePageManager() {
     }
 
     /** lọc các trang theo tìm kiếm */
-    filterPageBySearch(page_list: PageList, search:string): PageList {
-      return pickBy(page_list, (page_data) => {
+    filterPageBySearch(page_list: PageList, search: string): PageList {
+      return pickBy(page_list, page_data => {
         // chuyển dữ liệu tìm kiếm về tiếng việt không dấu
         let formated_page_name = nonAccentVn(page_data.page?.name || '')
         let page_id = page_data.page?.fb_page_id || ''
@@ -259,7 +267,6 @@ export function usePageManager() {
     }
   }
 
-
   const $main = new Main()
 
   return {
@@ -272,6 +279,6 @@ export function usePageManager() {
     goToChat: $main.goToChat,
     sortListPage: $main.sortListPage,
     filterPageByPlatform: $main.filterPageByPlatform,
-    filterPageBySearch: $main.filterPageBySearch
+    filterPageBySearch: $main.filterPageBySearch,
   }
 }

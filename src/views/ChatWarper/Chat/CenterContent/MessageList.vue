@@ -140,15 +140,19 @@
       </div>
       <div
         v-for="message of messageStore.send_message_list"
+        :key="message.temp_id"
         class="relative group flex flex-col gap-1 items-end py-2"
       >
         <div class="message-size group relative flex gap-1 items-end">
           <PageTempTextMessage
             :text="message.text"
-            :class="{
-              'border border-red-500': message.error,
-            }"
+            :mentions="message.mentions"
+            :snap_replay_message="message.snap_replay_message"
+            :is_error="message.error"
           />
+          <!-- :class="{
+            'border border-red-500 rounded-lg': message.error,
+          }" -->
           <StaffAvatar
             :id="chatbotUserStore.chatbot_user?.user_id"
             class="w-6 h-6 rounded-oval flex-shrink-0"
@@ -538,7 +542,9 @@ function socketNewMessage({ detail }: CustomEvent) {
   if (detail?.message_mid)
     remove(
       messageStore.send_message_list,
-      m => m.message_id === detail?.message_mid
+      message =>
+        message.message_id === detail?.message_mid ||
+        (message.replay_mid && message.replay_mid === detail?.replay_mid)
     )
 
   if (IS_BOTTOM) scrollToBottomMessage(messageStore.list_message_id)
@@ -805,6 +811,7 @@ const tryLoadUntilScrollable = (cb: CbError) => {
 </script>
 <style scoped lang="scss">
 .message-size {
-  @apply w-fit max-w-96;
+  @apply max-w-96;
+  width: fit-content;
 }
 </style>

@@ -38,7 +38,8 @@
 
         <Input
           ref="input_chat_ref"
-          @keyup="quick_answer_ref?.handleChatValue"
+          :mention_ref="mention_ref"
+          @keyup="onInputKeyup"
           :class="{
             'animate-fast-pulse': messageStore.is_input_run_ai,
           }"
@@ -62,6 +63,7 @@
         />
       </div>
       <QuickAnswer ref="quick_answer_ref" />
+      <Mention ref="mention_ref" />
     </div>
   </div>
   <div
@@ -89,6 +91,7 @@ import { IS_VISIBLE_SEND_BTN_FUNCT } from '@/views/ChatWarper/Chat/CenterContent
 
 import AiAnswer from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/AiAnswer.vue'
 import QuickAnswer from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/QuickAnswer.vue'
+import Mention from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/Mention.vue'
 import AiManager from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/AiManager.vue'
 import AttachmentMenu from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/AttachmentMenu.vue'
 import Input from '@/views/ChatWarper/Chat/CenterContent/InputChat/MainInput/Input.vue'
@@ -111,6 +114,8 @@ const emoji_ref = ref<InstanceType<typeof Dropdown>>()
 const input_chat_ref = ref<InstanceType<typeof Input>>()
 /**ref của modal chọn câu trả lời nhanh */
 const quick_answer_ref = ref<InstanceType<typeof QuickAnswer>>()
+/**ref của modal nhắc đến người dùng */
+const mention_ref = ref<InstanceType<typeof Mention>>()
 
 /**có đang tạo câu trả lời không */
 const is_loading_ai_answer = ref<boolean>(false)
@@ -200,8 +205,24 @@ function placeCaretAtEnd(el: HTMLElement) {
   }
 }
 
+/**hàm xử lý sự kiện keyup của input */
+function onInputKeyup($event: KeyboardEvent) {
+  quick_answer_ref.value?.handleChatValue($event)
+  mention_ref.value?.handleChatValue($event)
+}
+
 // xuất hàm cho component con xử dụng
 provide(IS_VISIBLE_SEND_BTN_FUNCT, isVisibleSendBtn)
+
+// provide main_input_ref để Input.vue có thể truy cập mention_ref
+provide('main_input_ref', {
+  get mention_ref() {
+    return mention_ref.value
+  },
+})
+
+// xuất mention_ref để Input.vue có thể sử dụng
+defineExpose({ mention_ref })
 </script>
 <style scoped lang="scss">
 .animate-fast-pulse {

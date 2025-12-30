@@ -7,7 +7,7 @@
         '-right-5': position === 'RIGHT',
         '-left-5': position === 'LEFT',
       }"
-      class="px-1 gap-1 flex items-center bg-white rounded-full w-fit shadow absolute z-20 -top-2.5"
+      class="px-1 gap-1 flex items-center bg-white rounded-full w-max shadow absolute z-20 -top-2.5"
     >
       <span
         v-if="ai_emotion_icon"
@@ -105,6 +105,7 @@ import ClientAvatar from '@/components/Avatar/ClientAvatar.vue'
 import { SparklesIcon } from '@heroicons/vue/24/solid'
 
 import type { MessageInfo } from '@/service/interface/app/message'
+import { clippingParents } from '@popperjs/core'
 
 const $props = withDefaults(
   defineProps<{
@@ -141,13 +142,13 @@ class Main {
     /**kết quả */
     let count = 0
 
-    // nếu có cảm xúc người dùng để lại thì tăng
+    /** nếu có cảm xúc người dùng để lại thì tăng */
     if (reaction_emoji.value) count++
 
-    // nếu có cảm xúc AI thì tăng
+    /** nếu có cảm xúc AI thì tăng */
     if (ai_emotion_icon.value) count++
 
-    // trả về kết quả
+    /** trả về kết quả */
     return count
   }
 }

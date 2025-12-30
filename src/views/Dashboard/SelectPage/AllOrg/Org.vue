@@ -93,20 +93,21 @@ const active_page_list = defineModel<PageData[]>('active_page_list')
 
 /** danh sách các page thuộc tổ chức hiện tại */
 const page_of_current_org = computed(() => {
+  // console.log(pageStore.active_page_list, 'active_page_list')
   return pickBy(pageStore.active_page_list, page => {
     return $main.isInCurrentOrg(page)
   })
 })
 
 /** danh sách sau khi đã lọc theo nhóm */
-const filter_page_list = computed(() =>
-  filterPageByGroup(
+const filter_page_list = computed(() => {
+  return filterPageByGroup(
     page_of_current_org.value,
     pageManagerStore.pape_to_group_map,
     pageStore.map_orgs?.map_page_org || {},
     orgStore.selected_org_group
   )
-)
+})
 
 class Main {
   /**sắp xếp page gắn sao lên đầu */
@@ -117,6 +118,7 @@ class Main {
 
   /** đếm số page của tổ chức hiện tại với nền tảng đang được lọc */
   countPage(): number {
+    // console.log('active_page_list', pageStore.active_page_list)
     /** các page của tổ chức hiện tại */
     const PAGE_OF_THIS_ORG = filter(pageStore.active_page_list, page =>
       this.isInCurrentOrg(page)

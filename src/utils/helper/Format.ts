@@ -18,10 +18,10 @@ export interface IFomat {
 @singleton()
 export class Format implements IFomat {
   numberToString(number?: number, is_abbreviation?: boolean) {
-    // nếu không có số thì trả về 0
+    /** nếu không có số thì trả về 0 */
     if (!number) return '0'
 
-    // nếu số nhỏ hơn 1000 thì trả về luôn
+    /** nếu số nhỏ hơn 1000 thì trả về luôn */
     if (number < 1000 || !is_abbreviation) return number.toString()
 
     /**hậu tố đơn vị */
@@ -31,7 +31,18 @@ export class Format implements IFomat {
     /**giá trị của đơn vị */
     const UNIT_VALUE = number / Math.pow(1000, UNIT_INDEX)
 
-    // làm tròn giá trị + thêm hậu tố đơn vị
+    /** làm tròn giá trị + thêm hậu tố đơn vị */
     return round(UNIT_VALUE, UNIT_VALUE >= 100 ? 0 : 1) + UNITS[UNIT_INDEX]
+  }
+  /**
+   * Hàm xóa dấu tiếng Việt
+   * @param str chuỗi cần xóa dấu
+   */
+  removeAccents(str: string) {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
   }
 }

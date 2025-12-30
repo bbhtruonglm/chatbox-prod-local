@@ -1,6 +1,7 @@
 import type { AllStaffList, StaffInfo } from '@/service/interface/app/staff'
-import type { ILabel } from './label'
+
 import type { AppInstalledInfo } from './widget'
+import type { ILabel } from './label'
 
 export type PageType =
   | 'FB_MESS'
@@ -9,6 +10,7 @@ export type PageType =
   | 'FB_WHATSAPP'
   | 'FB_INSTAGRAM'
   | 'ZALO_PERSONAL'
+  | 'TIKTOK'
 
 /**@deprecated IPage */
 export interface PageInfo {
@@ -54,6 +56,7 @@ export type IPageType =
   | 'ZALO_PERSONAL'
   | 'FB_INSTAGRAM'
   | 'WEBSITE'
+  | 'TIKTOK'
 
 /**các thông tin cơ bản của trang */
 export interface IPageInfo {
@@ -71,7 +74,7 @@ export interface IPageInfo {
    */
   name?: string
   /** tên gợi của trang người dùng tự thiết lập */
-  alias?:string
+  alias?: string
 
   // TODO sửa lại để tất cả các trang đều dùng link ảnh trong avatar, thay vì mỗi page type chạy 1 kiểu khác nhau
   /**link ảnh đại diện của trang */
@@ -722,7 +725,6 @@ export interface IPageAiAgent {
   /**nội dung của prompt riêng */
   ai_agent_custom_prompt?: string
 }
-
 
 /**thiết lập chat website */
 export interface IPageWebsiteConfig

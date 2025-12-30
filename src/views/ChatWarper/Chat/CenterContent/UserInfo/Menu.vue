@@ -16,6 +16,9 @@
     />
     <template v-if="uid">
       <MenuItem
+        v-if="
+          conversationStore.select_conversation?.platform_type === 'FB_MESS'
+        "
         @click="openPageInbox"
         :icon="InboxIcon"
         :title="$t('v1.view.main.dashboard.chat.action.open_inbox')"
@@ -23,10 +26,22 @@
         <NewTabIcon class="w-4 h-4 text-gray-500" />
       </MenuItem>
       <MenuItem
+        v-if="
+          conversationStore.select_conversation?.platform_type === 'FB_MESS'
+        "
         @click="openFbProfile"
         :icon="FacebookIcon"
         class_icon="size-4"
         :title="$t('v1.view.main.dashboard.chat.action.open_facebook')"
+      >
+        <NewTabIcon class="w-4 h-4 text-gray-500" />
+      </MenuItem>
+      <MenuItem
+        v-if="conversationStore.select_conversation?.platform_type === 'TIKTOK'"
+        @click="openTiktokProfile"
+        :icon="TiktokIcon"
+        class_icon="size-4"
+        :title="$t('v1.view.main.dashboard.chat.action.open_tiktok')"
       >
         <NewTabIcon class="w-4 h-4 text-gray-500" />
       </MenuItem>
@@ -57,7 +72,7 @@ import { openNewTab } from '@/service/function'
 import { flow } from '@/service/helper/async'
 import { useConversationStore } from '@/stores'
 import { keyBy, map } from 'lodash'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import Dropdown from '@/components/Dropdown.vue'
 import Loading from '@/components/Loading.vue'
@@ -65,6 +80,7 @@ import MenuItem from '@/components/Main/Dashboard/MenuItem.vue'
 import ClientInfo from '@/views/ChatWarper/Chat/CenterContent/UserInfo/ClientInfo.vue'
 
 import FacebookIcon from '@/components/Icons/Facebook.vue'
+import TiktokIcon from '@/components/Icons/Tiktok.vue'
 import InboxIcon from '@/components/Icons/Inbox.vue'
 import MinusIcon from '@/components/Icons/Minus.vue'
 import NewTabIcon from '@/components/Icons/NewTab.vue'
@@ -177,25 +193,34 @@ function toggleSpam() {
 }
 /**mở fb của khách */
 function openFbProfile() {
-  // nếu có uid thì mở fb của khách
+  /** nếu có uid thì mở fb của khách */
   if (uid.value) openNewTab(`https://fb.com/${uid.value}`)
-  // chạy qua ext -> click vào btn tạo ở file index.html
-  else
+  /** chạy qua ext -> click vào btn tạo ở file index.html */ else
     (
       document.getElementsByClassName(
         'open-fb-profile'
       )?.[0] as HTMLButtonElement
     )?.click()
 }
+/**mở tiktok của khách */
+function openTiktokProfile() {
+  /** nếu có uid thì mở tiktok của khách */
+  if (uid.value) openNewTab(`https://tiktok.com/@${uid.value}`)
+  /** chạy qua ext -> click vào btn tạo ở file index.html */ else
+    (
+      document.getElementsByClassName(
+        'open-tiktok-profile'
+      )?.[0] as HTMLButtonElement
+    )?.click()
+}
 /**mở inbox chat page */
 function openPageInbox() {
-  // nếu có uid thì mở fb của khách
+  /** nếu có uid thì mở fb của khách */
   if (uid.value)
     openNewTab(
       `https://business.facebook.com/latest/inbox/all?selected_item_id=${uid.value}&asset_id=${conversationStore.select_conversation?.fb_page_id}&mailbox_id=&thread_type=FB_MESSAGE`
     )
-  // chạy qua ext -> click vào btn tạo ở file index.html
-  else
+  /** chạy qua ext -> click vào btn tạo ở file index.html */ else
     (
       document.getElementsByClassName(
         'open-fb-inbox-page'

@@ -192,7 +192,6 @@ import TagNotIcon from '@/components/Icons/TagNot.vue'
 import UsersIcon from '@/components/Icons/Users.vue'
 import { ArrowLeftIcon, Squares2X2Icon } from '@heroicons/vue/24/solid'
 
-
 const conversationStore = useConversationStore()
 const orgStore = useOrgStore()
 const commonStore = useCommonStore()
@@ -228,18 +227,22 @@ watch(
       $main.clearAllFilter()
     }
 
-    /** map từ key shortcut sang ref của dropdown */ 
-    const FILTER_MAP: Record<string, {
-      filter_dropdown_ref?: { is_open: boolean }
-    } | undefined> = {
+    /** map từ key shortcut sang ref của dropdown */
+    const FILTER_MAP: Record<
+      string,
+      | {
+          filter_dropdown_ref?: { is_open: boolean }
+        }
+      | undefined
+    > = {
       interact: filter_interact.value,
-      message:  filter_message.value,
-      phone:    filter_phone.value,
-      date:     filter_date.value,
-      tag:      filter_tag.value,
-      not_tag:  filter_not_tag.value,
-      staff:    filter_staff.value,
-      post:     filter_post.value,
+      message: filter_message.value,
+      phone: filter_phone.value,
+      date: filter_date.value,
+      tag: filter_tag.value,
+      not_tag: filter_not_tag.value,
+      staff: filter_staff.value,
+      post: filter_post.value,
     }
 
     // nếu không liên quan đến lọc thì thôi

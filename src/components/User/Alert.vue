@@ -94,7 +94,11 @@
 <script setup lang="ts">
 import { useCommonStore, useOrgStore } from '@/stores'
 import { ref } from 'vue'
-import { get_noti, read_noti } from '@/service/api/chatbox/billing'
+import {
+  get_all_noti,
+  get_noti,
+  read_noti,
+} from '@/service/api/chatbox/billing'
 import { toastError } from '@/service/helper/alert'
 import { format as date_format } from 'date-fns'
 import { eachOfLimit } from 'async'
@@ -102,6 +106,7 @@ import { eachOfLimit } from 'async'
 import Modal from '@/components/Modal.vue'
 
 import type { NotiInfo } from '@/service/interface/app/billing'
+import { isEmpty } from 'lodash'
 
 const $emit = defineEmits(['done'])
 
@@ -157,13 +162,20 @@ async function getNoti() {
 
   try {
     // nếu không có id tổ chức thì thôi
-    if (!orgStore.selected_org_id) return
+    // if (!orgStore.selected_org_id) return
 
-    // xoá dữ liệu noti đang chọn nếu có
-    selected_noti_info.value = {}
+    // // xoá dữ liệu noti đang chọn nếu có
+    // selected_noti_info.value = {}
+    /** danh sách các tổ chức */
+    const LIST_ORG = orgStore.list_org || []
+
+    /** Lấy list org id */
+    const ORG_IDS = LIST_ORG.map(item => item.org_id || '')
+    /** nếu không có org ids thì trả về [] */
+    if (isEmpty(ORG_IDS)) return []
 
     /**các thông báo đã nằm trong tổ chức */
-    list_noti.value = await get_noti(orgStore.selected_org_id)
+    list_noti.value = await get_all_noti({ org_id: ORG_IDS, sort: 'is_read' })
   } catch (e) {
     // thông báo lỗi
     toastError(e)

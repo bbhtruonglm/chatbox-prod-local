@@ -1,4 +1,5 @@
-import { singleton } from "tsyringe"
+import { clippingParents } from '@popperjs/core'
+import { singleton } from 'tsyringe'
 
 /**quản lý các đường dẫn của media */
 export interface ICdn {
@@ -28,6 +29,12 @@ export interface ICdn {
    * @param page_id id của trang
    * @param client_id id của client
    */
+  tiktokClientAvt(page_id?: string, client_id?: string): string
+  /**
+   * đường dẫn ảnh đại diện của client
+   * @param page_id id của trang
+   * @param client_id id của client
+   */
   igClientAvt(page_id?: string, client_id?: string): string
   /**
    * đường dẫn ảnh của post
@@ -49,6 +56,11 @@ export interface ICdn {
    */
   fbMessageMedia(page_id?: string, message_id?: string, index?: number): string
   igMessageMedia(page_id?: string, message_id?: string, index?: number): string
+  tiktokMessageMedia(
+    page_id?: string,
+    message_id?: string,
+    index?: number
+  ): string
   webMessageMedia(page_id?: string, message_id?: string, index?: number): string
   /**
    * đường dẫn ảnh đại diện của page zalo
@@ -74,6 +86,9 @@ export class Cdn implements ICdn {
   userAvt(user_id?: string) {
     return `${this.HOST}/media/s/${user_id}/user`
   }
+  tiktokClientAvt(page_id?: string, client_id?: string) {
+    return `${this.HOST}/media/tiktok/${page_id}/client/${client_id}`
+  }
   fbClientAvt(page_id?: string, client_id?: string) {
     return `${this.HOST}/media/fb/${page_id}/client/${client_id}`
   }
@@ -94,6 +109,9 @@ export class Cdn implements ICdn {
   }
   webMessageMedia(page_id?: string, message_id?: string, index?: number) {
     return `${this.HOST}/media/web/${page_id}/message/${message_id}/${index}`
+  }
+  tiktokMessageMedia(page_id?: string, message_id?: string, index?: number) {
+    return `${this.HOST}/media/tiktok/${page_id}/message/${message_id}/${index}`
   }
   zlpPageAvt(page_id?: string) {
     return `${this.HOST}/media/zlp/${page_id}/page`

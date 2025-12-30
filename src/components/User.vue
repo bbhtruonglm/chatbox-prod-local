@@ -92,7 +92,7 @@
   <ModalKeyboardShortcut ref="modal_keyboard_shortcut" />
 </template>
 <script setup lang="ts">
-import { count_noti } from '@/service/api/chatbox/billing'
+import { count_all_noti, count_noti } from '@/service/api/chatbox/billing'
 import { signout } from '@/service/helper/oauth'
 import { useChatbotUserStore, useOrgStore } from '@/stores'
 import { Device } from '@/utils/helper/Device'
@@ -121,6 +121,7 @@ import UsersIcon from '@/components/Icons/Users.vue'
 import { QuestionMarkCircleIcon } from '@heroicons/vue/24/solid'
 
 import type { ModalPosition } from '@/service/interface/vue'
+import { isEmpty } from 'lodash'
 
 const $props = withDefaults(
   defineProps<{
@@ -180,15 +181,18 @@ async function countNotiAllOrg() {
   try {
     /** danh sách các tổ chức */
     const LIST_ORG = orgStore.list_org || []
-
+    /** Lấy list org id */
+    const ORG_IDS = LIST_ORG.map(item => item.org_id || '')
+    if (isEmpty(ORG_IDS)) return
     // lặp qua từng tổ chức để đếm số thông báo
-    for (const org of LIST_ORG) {
-      
-      // nếu không có id tổ chức thì thôi qua tổ chức tiếp theo
-      if (!org.org_id) continue
-      // cộng số thông báo lấy được vào total_count
-      total_count += await count_noti(org.org_id)
-    }
+    // for (const org of LIST_ORG) {
+
+    //   // nếu không có id tổ chức thì thôi qua tổ chức tiếp theo
+    //   if (!org.org_id) continue
+    //   // cộng số thông báo lấy được vào total_count
+    //   // total_count += await count_noti(org.org_id)
+    // }
+    total_count += await count_all_noti(ORG_IDS)
   } catch (e) {
     // tạm thời không xử lý
   } finally {

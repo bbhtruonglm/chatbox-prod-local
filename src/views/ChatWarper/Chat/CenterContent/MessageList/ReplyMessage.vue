@@ -1,5 +1,10 @@
 <template>
-  <div class="message-box bg-slate-100 text-slate-500 relative -bottom-2">
+  <div
+    class="message-box bg-slate-100 text-slate-500 relative -bottom-2"
+    :class="{
+      'border border-b-0 border-red-500 rounded-b-none': is_error,
+    }"
+  >
     <template v-if="message?.message_text">
       {{ message?.message_text }}
     </template>
@@ -25,6 +30,8 @@ const $props = withDefaults(
   defineProps<{
     /**nội dung tin nhắn bí mật của page */
     message: MessageInfo
+    /**có lỗi hay không */
+    is_error?: boolean
   }>(),
   {}
 )

@@ -17,6 +17,7 @@
 
   <ZaloIcon v-else-if="page_type === 'ZALO_OA'" />
   <ZaloIcon v-else-if="page_type === 'ZALO_PERSONAL'" />
+  <TiktokIcon v-else-if="page_type === 'TIKTOK'" />
 
   <div v-else />
 </template>
@@ -25,6 +26,7 @@
 import WebIcon from '@/components/Icons/Web.vue'
 import FacebookIcon from '@/components/Icons/Facebook.vue'
 import ZaloIcon from '@/components/Icons/Zalo.vue'
+import TiktokIcon from '@/components/Icons/Tiktok.vue'
 
 import type { PageType } from '@/service/interface/app/page'
 

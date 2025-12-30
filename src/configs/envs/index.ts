@@ -28,6 +28,7 @@ const ENV: IEnv = {
     merchant: {
       contact: import.meta.env.VITE_HOST_MERCHANT_CONTACT,
     },
+    proxy_video: import.meta.env.VITE_HOST_PROXY_VIDEO,
     backup: import.meta.env.VITE_HOST_BACKUP,
   },
   external_link: {
@@ -57,6 +58,12 @@ const ENV: IEnv = {
     redirect_uri: import.meta.env.VITE_INSTAGRAM_REDIRECT_URI,
     app_id: import.meta.env.VITE_INSTAGRAM_APP_ID,
     scope: import.meta.env.VITE_INSTAGRAM_SCOPE?.split(','),
+  },
+  tiktok: {
+    redirect_uri: import.meta.env.VITE_TIKTOK_REDIRECT_URI,
+    app_id: import.meta.env.VITE_TIKTOK_APP_ID,
+    scope: import.meta.env.VITE_TIKTOK_SCOPE?.split(','),
+    get_link_api: import.meta.env.VITE_TIKTOK_GET_LINK_API,
   },
   platform: import.meta.env.VITE_SUPPORTED_PLATFORMS?.split(','),
   img_host: import.meta.env.VITE_IMG_HOST,

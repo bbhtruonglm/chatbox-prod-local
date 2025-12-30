@@ -423,19 +423,19 @@ export async function getSelectedPageInfo(
 ) {
   const pageStore = usePageStore()
 
-  // nạp dữ liệu của tổ chức hiện tại
+  /** nạp dữ liệu của tổ chức hiện tại */
   getCurrentOrgInfo()
 
-  // lấy dữ liệu trang muốn chat
+  /** lấy dữ liệu trang muốn chat */
   get_page_info_to_chat(keys(pageStore.selected_page_id_list), (e, r) => {
     if (e) return proceed(e)
     if (!r)
       return proceed($t('v1.view.main.dashboard.chat.error.get_page_info'))
 
-    // lưu dữ liệu trang đã chọn
+    /** lưu dữ liệu trang đã chọn */
     pageStore.selected_page_list_info = r
 
-    // lưu dữ liệu nhân viên của các trang đã chọn
+    /** lưu dữ liệu nhân viên của các trang đã chọn */
     pageStore.selected_pages_staffs = User.getUsersInfo(r)
 
     proceed()
@@ -455,7 +455,7 @@ export function getCurrentOrgInfo() {
     !orgStore.selected_org_id ||
     // bị kick ra khỏi tổ chức hiện tại đang chọn
     !orgStore.list_org?.find(org => org.org_id === orgStore.selected_org_id)
-  ) 
+  )
     orgStore.selected_org_id = orgStore.list_org?.[0]?.org_id
 
   // nạp dữ liệu của tổ chức hiện tại được chọn từ danh sách tổ chức
@@ -535,9 +535,9 @@ export function calcIsPageRepSlow(
 }
 
 /**
- * xử lý chuỗi tin nhắn trước khi hiển thị 
+ * xử lý chuỗi tin nhắn trước khi hiển thị
  * @deprecated dùng renderTextV2() thay thế
-*/
+ */
 export function renderText(text: string) {
   /** regex kiểm tra số điện thoại */
   const REGEX_PHONE =
@@ -585,12 +585,11 @@ export function renderText(text: string) {
 /** xử lý chuỗi tin nhắn trước khi hiển thị  */
 export function renderTextV2(input: string): string {
   /** regex kiểm tra url */
-  const URL_REGEX =
-    /((http|https)?:\/\/[^\s]+)/g
+  const URL_REGEX = /((http|https)?:\/\/[^\s]+)/g
 
   /** regex kiểm tra email */
   const EMAIL_REGEX =
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$|([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi
+    /^(([^<spanspan>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$|([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi
 
   /**regex kiểm tra số điện thoại */
   const PHONE_REGEX =
@@ -600,18 +599,18 @@ export function renderTextV2(input: string): string {
   const URL_PLACEHOLDERS: string[] = []
 
   /** nội dung tin nhắn sau khi đã thay tạm các url bằng placeholder */
-  let protected_text = input.replace(URL_REGEX, (match) => {
+  let protected_text = input.replace(URL_REGEX, match => {
     URL_PLACEHOLDERS.push(match)
     return `__URL_PLACEHOLDER_${URL_PLACEHOLDERS.length - 1}__`
   })
 
   // thay hiển thị các số điện thoại
-  protected_text = protected_text.replace(PHONE_REGEX, (match) => {
+  protected_text = protected_text.replace(PHONE_REGEX, match => {
     return `<span class="phone-detect" style="cursor: copy;">${match}</span>`
   })
 
   // thay hiện thị các email
-  protected_text = protected_text.replace(EMAIL_REGEX, (match) => {
+  protected_text = protected_text.replace(EMAIL_REGEX, match => {
     return `<span class="email-detect" style="cursor: copy;">${match}</span>`
   })
 
@@ -623,7 +622,6 @@ export function renderTextV2(input: string): string {
 
   return protected_text
 }
-
 
 /**xử lý sự kiện click vào tin nhắn để sao chép sdt, email */
 export function clickCopyPhoneEmail($event: MouseEvent) {

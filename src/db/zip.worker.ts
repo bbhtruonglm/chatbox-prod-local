@@ -44,7 +44,14 @@ onmessage = async (e: MessageEvent<WorkerMessage>) => {
           const lines = text.split('\n').filter(Boolean)
 
           const batchSize = 1000
-          for (let i = 0; i < lines.length; i += batchSize) {
+
+          /** Check saved resume index */
+          const RESUME_KEY = `worker_resume_${orgId}`
+          const savedIndexItem = await db.meta.get(RESUME_KEY)
+          const startIndex =
+            typeof savedIndexItem?.value === 'number' ? savedIndexItem.value : 0
+
+          for (let i = startIndex; i < lines.length; i += batchSize) {
             const slice = lines.slice(i, i + batchSize)
             const mapData: Record<string, any> = {}
             slice.forEach(line => {
@@ -56,6 +63,10 @@ onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
             if (Object.keys(mapData).length) {
               await db.saveMany(mapData, orgId)
+
+              /** Save progress checkpoint */
+              await db.meta.put({ key: RESUME_KEY, value: i + batchSize })
+
               postMessage({
                 type: 'progress',
                 orgId,
@@ -64,6 +75,9 @@ onmessage = async (e: MessageEvent<WorkerMessage>) => {
               })
             }
           }
+
+          /** Clear progress checkpoint when done */
+          await db.meta.delete(RESUME_KEY)
 
           resolve()
         })

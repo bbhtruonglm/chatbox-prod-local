@@ -7,6 +7,7 @@
     class="flex items-center hover:bg-slate-200 w-full group rounded-xl px-2 py-3 gap-3"
   >
     <ClientAvatar :source="source" />
+    <span>{{ index }}</span>
     <div class="flex flex-col gap-0.5 flex-grow min-w-0 relative">
       <ClientName :source="source" />
       <LastMessage :source="source" />
@@ -53,6 +54,7 @@ interface IConversationItem extends ConversationInfo {
 const $props = withDefaults(
   defineProps<{
     source?: ConversationInfo
+    index?: number
   }>(),
   {}
 )
@@ -130,7 +132,7 @@ class Main {
       !$props.source?.data_key
     )
       return
-    // Đánh dấu đang chuyển hội thoại
+    /** Đánh dấu đang chuyển hội thoại */
     conversationStore.is_switching_conversation = true
     /**dữ liệu hội thoại */
     const CONVERSATION: IConversationItem = $props.source

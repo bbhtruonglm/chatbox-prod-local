@@ -5,6 +5,7 @@ import ZaloIcon from '@/components/Icons/Zalo.vue'
 import WebIcon from '@/components/Icons/Web.vue'
 import WhatsappIcon from '@/components/Icons/Whatsapp.vue'
 import InstagramIcon from '@/components/Icons/Instagram.vue'
+import TiktokIcon from '@/components/Icons/Tiktok.vue'
 
 export function composableService() {
   /** Icon mặc định */
@@ -16,6 +17,7 @@ export function composableService() {
     ZALO_OA: markRaw(ZaloIcon),
     ZALO_PERSONAL: markRaw(ZaloIcon),
     WEBSITE: markRaw(WebIcon),
+    TIKTOK: markRaw(TiktokIcon),
   }
 
   // trả về các biến, hàm cần thiết

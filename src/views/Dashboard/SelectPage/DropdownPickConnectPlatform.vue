@@ -133,6 +133,7 @@ const $props = withDefaults(
 const DESCRIPTION_MAP: Record<string, string> = {
   FB_MESS: $t('Kết nối Trang Facebook'),
   FB_INSTAGRAM: $t('Kết nối Trang Instagram'),
+  TIKTOK: $t('Kết nối Trang Tiktok'),
   FB_WHATSAPP: $t('Kết nối Trang WhatsApp Business và Cá nhân'),
   WEBSITE: $t('Kết nối Website'),
   ZALO: $t('Kết nối Zalo OA và Zalo cá nhân'),

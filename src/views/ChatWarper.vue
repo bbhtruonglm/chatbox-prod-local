@@ -148,7 +148,7 @@ const ref_alert_reach_quota = ref<InstanceType<typeof AlertRechQuota>>()
 
 watch(
   () => conversationStore.select_conversation,
-  (new_val, old_val) => getTokenOfWidget(new_val, old_val)
+  (new_val, old_val) => getTokenOfWidget(new_val, old_val),
 )
 
 onMounted(() => {
@@ -233,7 +233,7 @@ function initExtensionLogic() {
           conversationStore.select_conversation?.fb_client_id,
           pageStore?.selected_page_list_info?.[
             conversationStore.select_conversation?.fb_page_id
-          ]?.page?.fb_page_token
+          ]?.page?.fb_page_token,
         )
     }
 
@@ -293,7 +293,7 @@ function initExtensionLogic() {
           fb_uid: r?.id,
           fb_info: r?.info,
         },
-        (e, r) => {}
+        (e, r) => {},
       )
     }
   })
@@ -301,7 +301,7 @@ function initExtensionLogic() {
 /**khởi tạo token cho widget */
 function getTokenOfWidget(
   new_val?: ConversationInfo,
-  old_val?: ConversationInfo
+  old_val?: ConversationInfo,
 ) {
   /**id trang hiện tại được chọn */
   const PAGE_ID = new_val?.fb_page_id
@@ -330,12 +330,12 @@ function getTokenOfWidget(
       payload: {
         fb_client_id: conversationStore.select_conversation?.fb_client_id,
         page_name: getPageInfo(
-          conversationStore.select_conversation?.fb_page_id
+          conversationStore.select_conversation?.fb_page_id,
         )?.name,
         label_data: map(
-          pageStore.selected_page_list_info?.[PAGE_ID]?.label_list
+          pageStore.selected_page_list_info?.[PAGE_ID]?.label_list,
         )?.filter(label =>
-          conversationStore.select_conversation?.label_id?.includes(label?._id)
+          conversationStore.select_conversation?.label_id?.includes(label?._id),
         ),
         current_staff_id: chatbotUserStore.chatbot_user?.fb_staff_id,
         current_staff_name: chatbotUserStore.chatbot_user?.full_name,
@@ -351,7 +351,7 @@ function getTokenOfWidget(
         old_page_id: OLD_PAGE_ID,
         data: r,
       }
-    }
+    },
   )
 }
 /**giảm tải việc làm mới thời gian liên tục */
@@ -386,14 +386,14 @@ function handleSocketEvent(socket_data: {
           conversation,
           event,
         },
-      })
+      }),
     )
 
   // gửi thông điệp đến component xử lý hiển thị danh sách tin nhắn
   if (size(message)) {
     // socket tin nhắn mới cho các component
     window.dispatchEvent(
-      new CustomEvent('chatbox_socket_message', { detail: message })
+      new CustomEvent('chatbox_socket_message', { detail: message }),
     )
 
     // render lại thời gian của hội thoại
@@ -405,7 +405,7 @@ function handleSocketEvent(socket_data: {
     window.dispatchEvent(
       new CustomEvent('chatbox_socket_update_message', {
         detail: update_message,
-      })
+      }),
     )
 
   // gửi thông điệp cập nhật comment
@@ -413,7 +413,7 @@ function handleSocketEvent(socket_data: {
     window.dispatchEvent(
       new CustomEvent('chatbox_socket_update_comment', {
         detail: update_comment,
-      })
+      }),
     )
 
   // thông báo cho người dùng nếu là tin nhắn của khách hàng gửi cho page
@@ -491,7 +491,7 @@ function checkAllowNoti() {
 /**kiểm tra hội thoại có thoả mãn diều kiện lọc để được xuất hiện không */
 function validateConversation(
   conversation?: ConversationInfo,
-  message?: MessageInfo
+  message?: MessageInfo,
 ) {
   // nêu không có dữ liệu hội thoại thì chặn
   if (!conversation || !size(conversation)) return
@@ -529,15 +529,15 @@ function validateConversation(
     conversationStore.option_filter_page_data.search &&
     (!conversation.client_name ||
       !new RegExp(conversationStore.option_filter_page_data.search, 'i').test(
-        conversation.client_name
+        conversation.client_name,
       )) &&
     (!conversation.client_phone ||
       !new RegExp(conversationStore.option_filter_page_data.search, 'i').test(
-        conversation.client_phone
+        conversation.client_phone,
       )) &&
     (!conversation.client_email ||
       !new RegExp(conversationStore.option_filter_page_data.search, 'i').test(
-        conversation.client_email
+        conversation.client_email,
       ))
   )
     return
@@ -573,7 +573,7 @@ function validateConversation(
     conversationStore.option_filter_page_data.staff_id &&
     (!conversation.fb_staff_id ||
       !conversationStore.option_filter_page_data.staff_id.includes(
-        conversation.fb_staff_id
+        conversation.fb_staff_id,
       ))
   )
     return
@@ -584,7 +584,7 @@ function validateConversation(
     !conversationStore.option_filter_page_data.label_and &&
     !intersection(
       conversationStore.option_filter_page_data.label_id,
-      conversation.label_id
+      conversation.label_id,
     ).length
   )
     return
@@ -597,7 +597,7 @@ function validateConversation(
       !conversation.label_id.length ||
       difference(
         conversationStore.option_filter_page_data.label_id,
-        conversation.label_id
+        conversation.label_id,
       ).length)
   )
     return
@@ -607,7 +607,7 @@ function validateConversation(
     conversationStore.option_filter_page_data.not_label_id &&
     intersection(
       conversationStore.option_filter_page_data.not_label_id,
-      conversation.label_id
+      conversation.label_id,
     ).length
   )
     return
@@ -658,7 +658,7 @@ class Main {
     // nạp lại dữ liệu của tổ chức hiện tại đang chọn cho chắc
     getCurrentOrgInfo()
 
-    // nếu vẫn không có tổ chức thì thôi
+    /** nếu vẫn không có tổ chức thì thôi */
     if (!orgStore.selected_org_id)
       throw $t('v1.view.main.dashboard.chat.error.get_org_info')
 
@@ -666,7 +666,7 @@ class Main {
     const PAGES = await new N4SerivceAppPage().getPageInfoToChat(
       orgStore.selected_org_id,
       SELECTED_PAGE_IDS,
-      true
+      true,
     )
 
     // nếu không có dữ liệu trang nào thì thôi
@@ -679,14 +679,16 @@ class Main {
     pageStore.selected_pages_staffs = User.getUsersInfo(PAGES)
 
     // lưu lại các widget trên chợ, để map cta
-    pageStore.market_widgets = await new N5AppV1AppApp().readMarket()
+    pageStore.market_widgets = await new N5AppV1AppApp()
+      .readMarket()
+      .catch(() => undefined)
 
     // khởi tạo kết nối socket lên server
     $socket.connect(
       $env.host.n3_socket,
       keys(pageStore.selected_page_id_list),
       chatbotUserStore.chatbot_user?.fb_staff_id || '',
-      handleSocketEvent
+      handleSocketEvent,
     )
   }
 
@@ -709,7 +711,7 @@ class Main {
   markOrgHaveZalo(oss: OwnerShipInfo[]) {
     /**lọc ra các trang zalo cá nhân */
     pageStore.zlp_oss = oss.filter(
-      os => os?.page_info?.type === 'ZALO_PERSONAL'
+      os => os?.page_info?.type === 'ZALO_PERSONAL',
     )
   }
 }

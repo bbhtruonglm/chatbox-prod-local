@@ -34,6 +34,11 @@ export interface OrgInfo {
     /**đại diện tổ chức */
     org_representative?: string
   }
+  /**thông tin riêng tư của tổ chức */
+  org_private?: {
+    /**mã bí mật của tổ chức */
+    org_secret_key?: string
+  }
   /**các thiết lập của tổ chức */
   org_config?: {
     /**
@@ -145,7 +150,7 @@ export interface MemberShipInfo {
   ms_role?: 'ADMIN' | 'STAFF'
   /**nhân viên đã được kích hoạt chưa */
   ms_is_active?: boolean
-  /**thời gian tạo */
+  /** thời gian tạo */
   createdAt?: string
 }
 

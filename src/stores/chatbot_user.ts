@@ -36,7 +36,7 @@ export const useChatbotUserStore = defineStore('chatbot_user_store', () => {
   /** ------------ GETTER ----------- */
   /**đọc id của nhân viên hiện tại đang đăng nhập */
   function getStaffId() {
-    return chatbot_user.value?.fb_staff_id
+    return chatbot_user.value?.user_id || chatbot_user.value?.fb_staff_id
   }
 
   /** ------------ ACTION ----------- */

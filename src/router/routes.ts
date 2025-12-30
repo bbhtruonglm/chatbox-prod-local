@@ -33,6 +33,7 @@ import SelectPage from '@/views/Dashboard/SelectPage.vue'
 import SelectPlatform from '@/views/Dashboard/SelectPlatform.vue'
 import TakeControl from '@/views/TakeControl.vue'
 import Template from '@/views/Template.vue'
+import TiktokRedirectUri from '@/views/TiktokRedirectUri.vue'
 import User from '@/views/Dashboard/User.vue'
 import Widget from '@/views/Dashboard/Widget.vue'
 import ZaloPeronalCore from '@/views/ZaloPeronalCore.vue'
@@ -115,6 +116,7 @@ export const routes = [
   { path: '/deauthorize-instagram', component: DeauthorizeInstagram },
   { path: '/post-analytic', component: PostAnalyticIframe },
   { path: '/instagram-redirect-uri', component: InstagramRedirectUri },
+  { path: '/tiktok-redirect-uri', component: TiktokRedirectUri },
   { path: '/zalo-personal-conversation', component: ZaloPeronalCore },
   { path: '/404', component: PageNotFound },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: PageNotFound },

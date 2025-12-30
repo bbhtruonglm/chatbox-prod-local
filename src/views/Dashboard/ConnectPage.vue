@@ -85,6 +85,7 @@
           <Instagram
             v-else-if="connectPageStore.current_menu === 'FB_INSTAGRAM'"
           />
+          <Tiktok v-else-if="connectPageStore.current_menu === 'TIKTOK'" />
           <div
             v-else
             class="p-2"
@@ -113,6 +114,7 @@ import Website from '@/views/Dashboard/ConnectPage/Website.vue'
 import Zalo from '@/views/Dashboard/ConnectPage/Zalo.vue'
 import Search from '@/views/Dashboard/ConnectPage/Search.vue'
 import Instagram from '@/components/OAuth/Instagram.vue'
+import Tiktok from '@/components/OAuth/Tiktok.vue'
 
 const $emit = defineEmits(['done'])
 

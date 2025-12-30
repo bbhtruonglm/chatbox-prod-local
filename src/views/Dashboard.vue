@@ -39,6 +39,25 @@
       ref="connect_page_ref"
     />
   </div>
+
+  <div
+    v-if="is_syncing_data"
+    class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm text-white"
+  >
+    <div
+      class="flex flex-col items-center gap-4 p-6 bg-white rounded-xl shadow-2xl text-slate-800 animate-fade-in-up"
+    >
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"
+      ></div>
+      <div class="text-center space-y-1">
+        <h3 class="font-bold text-lg">Đang đồng bộ dữ liệu...</h3>
+        <p class="text-sm text-slate-500">
+          Vui lòng chờ (Không thoát để tránh sai lệch dữ liệu)
+        </p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -53,7 +72,7 @@ import { usePageManager } from '@/views/Dashboard/composables/usePageManager'
 import { KEY_GET_CHATBOT_USER_FUNCT } from '@/views/Dashboard/symbol'
 import { size } from 'lodash'
 import { storeToRefs } from 'pinia'
-import { onMounted, provide, ref, watch } from 'vue'
+import { provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import ConnectPage from '@/views/Dashboard/ConnectPage.vue'
@@ -120,21 +139,29 @@ class Main {
 }
 const $main = new Main()
 
+const is_syncing_data = ref(false)
+
 watch(
   () => org_store.list_org,
   async val => {
     if (!val || !val.length) return
 
-    const RESULTS = await loadOrgData(
-      val.filter(o => o.org_id).map(o => ({ org_id: o.org_id! })),
-      ({ orgId, status, count, error }) => {
-        /** Cập nhật UI hoặc reactive state */
-        loading_state.value[orgId] = { status, count, error }
-        console.log('Worker progress', orgId, status, count, error)
-      }
-    )
+    try {
+      is_syncing_data.value = true
 
-    console.log('All orgs loaded', RESULTS)
+      const RESULTS = await loadOrgData(
+        val.filter(o => o.org_id).map(o => ({ org_id: o.org_id! })),
+        ({ orgId, status, count, error }) => {
+          /** Cập nhật UI hoặc reactive state */
+          loading_state.value[orgId] = { status, count, error }
+          console.log('Worker progress', orgId, status, count, error)
+        }
+      )
+
+      console.log('All orgs loaded', RESULTS)
+    } finally {
+      is_syncing_data.value = false
+    }
   },
   { immediate: true }
 )
@@ -148,5 +175,18 @@ provide(KEY_GET_CHATBOT_USER_FUNCT, get_me_chatbot_user)
   .btn-custom {
     @apply rounded items-center gap-2 hidden md:flex;
   }
+}
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
 }
 </style>
